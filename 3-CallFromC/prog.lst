@@ -1,0 +1,9 @@
+     1                                  section .text
+     2                                  
+     3                                  global _Z9substractll
+     4                                  
+     5                                  _Z9substractll:
+     6 00000000 4829F7                              sub rdi, rsi
+     7 00000003 4889F8                              mov rax, rdi
+     8                                  
+     9 00000006 C3                                  ret

@@ -1,0 +1,21 @@
+     1                                  section .text
+     2                                  
+     3                                  global _start ; entry point
+     4                                  
+     5 00000000 B801000000              _start:     mov rax, 0x01   ; sys_write
+     6 00000005 BF01000000                          mov rdi, 1      ; file descr - stdout
+     7 0000000A 48BE-                               mov rsi, Msg    ; buffer
+     7 0000000C [0000000000000000] 
+     8 00000014 BA0A000000                          mov rdx, MsgLen ; buffer len
+     9 00000019 0F05                                syscall
+    10                                  
+    11 0000001B B83C000000                          mov rax, 0x3c   ; sys_exit
+    12 00000020 4831FF                              xor rdi, rdi    ; error_code = 0
+    13 00000023 0F05                                syscall
+    14                                  
+    15                                  section .data
+    16                                  
+    17 00000000 48656C6C6F2061736D-     Msg:        db "Hello asm", 0x0a
+    17 00000009 0A                 
+    18                                  MsgLen:     equ $ - Msg
+    19                                  
