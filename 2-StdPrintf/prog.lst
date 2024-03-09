@@ -3,22 +3,20 @@
      3                                  global main
      4                                  extern printf
      5                                  
-     6 00000000 55                      main:       push rbp
+     6 00000000 C8000000                main:       enter 0, 0
      7                                  
-     8 00000001 48BF-                               mov rdi, Str
-     8 00000003 [0000000000000000] 
-     9 0000000B 48BE-                               mov rsi, Meow
-     9 0000000D [1200000000000000] 
-    10 00000015 B800000000                          mov rax, 0
-    11 0000001A E8(00000000)                        call printf
+     8 00000004 48BF-                               mov rdi, Str
+     8 00000006 [0000000000000000] 
+     9 0000000E 48BE-                               mov rsi, Meow
+     9 00000010 [1200000000000000] 
+    10 00000018 B800000000                          mov rax, 0
+    11 0000001D E8(00000000)                        call printf
     12                                  
-    13 0000001F 5D                                  pop rbp
-    14                                  
-    15 00000020 B800000000                          mov rax, 0
-    16 00000025 C3                                  ret
+    13 00000022 C9                                  leave
+    14 00000023 C3                                  ret
+    15                                  
+    16                                  section .data
     17                                  
-    18                                  section .data
-    19                                  
-    20 00000000 48656C6C6F20707269-     Str:        db "Hello printf! %s", 0x0a, 0
-    20 00000009 6E7466212025730A00 
-    21 00000012 4D656F7700              Meow:       db "Meow", 0
+    18 00000000 48656C6C6F20707269-     Str:        db "Hello printf! %s", 0x0a, 0
+    18 00000009 6E7466212025730A00 
+    19 00000012 4D656F7700              Meow:       db "Meow", 0

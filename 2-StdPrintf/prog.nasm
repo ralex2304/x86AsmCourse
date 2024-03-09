@@ -10,8 +10,6 @@ main:       enter 0, 0
             mov rax, 0
             call printf
 
-            pop rbp
-
             leave
             ret
 

@@ -36,7 +36,7 @@ segment .text
             SYS_WRITE Buffer, r13
 
             ; reset buffer size
-            mov dword [BufferSize], 0 ; xor? // REVIEW
+            mov dword [BufferSize], 0
             xor r13, r13
 
             pop rdx
@@ -44,7 +44,26 @@ segment .text
 ;=================================================
 
 ;=================================================
-; myprintf(): writes one symbol of format str to Buffer
+; Flushes buffer if buffer is not empty
+;
+; Assumes:  r13 - buffer size
+;
+; Destr:    rax, rdi, rsi, rcx, r11
+;=================================================
+%macro  FLUSH_IF_NEEDED 0
+
+            test r13, r13 ; cmp r13, 0
+            je %%isEmptyBuf
+
+            FLUSH_BUFFER
+%%isEmptyBuf:
+
+%endmacro
+;=================================================
+
+
+;=================================================
+; Writes one symbol to Buffer
 ;
 ; Args:     %1 - symbol to write
 ;
@@ -58,8 +77,8 @@ segment .text
             jb %%noFlush
 
             FLUSH_BUFFER
-
 %%noFlush:
+
             mov byte [Buffer + r13], %1
             inc r8d
             inc r13
@@ -73,7 +92,7 @@ segment .text
 
             cmp r10, rbp
             jne %%NotRegsArgsExceeded
-            add r10, 16 + 8 + 8 * SavedArgs
+            add r10, 16 + 8 * SavedArgs ; ret + ret2 + SavedArgs
 
 %%NotRegsArgsExceeded:
 %endmacro
@@ -89,17 +108,15 @@ segment .text
 global _Z8myprintfPKcz
 _Z8myprintfPKcz:
 
-SavedArgs   equ 3 ; !!!
+SavedArgs   equ 3 ; !!! needed for stack args addr calc
             push rbx
             push r12
             push r13
 
-            ; enter 0, 0 // REVIEW
             push rbp
             mov rbp, rsp
 
             ; push register arguments (only variadic)
-            ; mov qword [rbp - 8], r9 // REVIEW
             push r9
             push r8
             push rcx
@@ -112,7 +129,7 @@ SavedArgs   equ 3 ; !!!
             mov r10, rsp                ; r10 = rsp         - args stack ptr
             mov r13d, dword [BufferSize]; r13 = [BufSize]   - buffer size
             mov bl, [r9]                ; bl  = [r9]        - current fmt symbol
-                                        ; r8d = 0           - symbol counter
+            xor r8, r8                  ; r8d = 0           - symbol counter
                                         ; r9                - format string ptr
             jmp .whileFmtEnter
 .whileFmtBody:
@@ -151,18 +168,19 @@ SavedArgs   equ 3 ; !!!
             times ('x' - 's' - 1) dq .spec_error
             dq .spec_hex
 
-.spec_bin:  call printf_spec_binary
-            jmp .switch_end
 .spec_char: call printf_spec_char
             jmp .switch_end
-.spec_dec:  call printf_spec_decimal
+.spec_bin:  call printf_spec_binary
             jmp .switch_end
 .spec_oct:  call printf_spec_octal
             jmp .switch_end
-.spec_str:  call printf_spec_string
+.spec_dec:  call printf_spec_decimal
             jmp .switch_end
 .spec_hex:  call printf_spec_hex
             jmp .switch_end
+.spec_str:  call printf_spec_string
+            jmp .switch_end
+
 
 .spec_error:
             SYS_WRITE UnknownSpecErrorMsg, UnknownSpecErrorMsgLen
@@ -184,13 +202,9 @@ SavedArgs   equ 3 ; !!!
 
 
             ; flush buffer
-            test r13, r13 ; cmp r13, 0
-            je .isEmptyBuf
+            FLUSH_IF_NEEDED
 
-            FLUSH_BUFFER
             mov dword [BufferSize], 0
-
-.isEmptyBuf:
 
             mov eax, r8d
 .return:
@@ -263,37 +277,37 @@ printf_spec_string:
 ; Writes to buffer unsidned int from eax with base r12
 ;
 ; Args:     eax - number
-;           r12 - base
 ;
-; Assumes:  r13 - buffer size
+; Assumes:  r13 - dest pointer
 ;           r8d - symbol counter
 ;
 ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11
 ;-------------------------------------------------
-ConvertNumTo:
-
+ConvertDec:
+            mov r12d, 10 ; base
+.whileBody:
             xor rdx, rdx
             div r12d
             ; eax = div
             ; edx = mod
 
-            push rdx
-
-            test eax, eax ; cmp eax, 0
-            jne .nextCall
-
-            jmp .break
-.nextCall:
-            call ConvertNumTo
-.break:
-
-            pop rdx
-
             mov dl, HexTable[rdx]
+            mov byte [r13], dl
+            dec r13
 
-            push rax ; save rax
-            WRITE_TO_BUF dl
-            pop rax
+.whileClause:
+            test eax, eax
+            jne .whileBody
+
+            mov r11, Buffer + BufCapacity - 1
+            sub r11, r13
+            push r11
+
+            inc r13
+            SYS_WRITE r13, r11
+
+            pop r11
+            add r8, r11
 
             ret
 ;-------------------------------------------------
@@ -313,7 +327,7 @@ printf_spec_decimal:
 
             mov eax, [r10]
 
-            cmp eax, 0
+            test eax, eax
             jge .isPositive
 
             ; is negative
@@ -324,103 +338,115 @@ printf_spec_decimal:
             neg eax
 
 .isPositive:
-            mov r12, 10 ; base
-            call ConvertNumTo
+
+            push rax
+            FLUSH_IF_NEEDED
+            pop rax
+
+            lea r13, [Buffer + BufCapacity - 1] ; r13 - output str pointer
+
+            call ConvertDec
+            xor r13, r13 ; buffer is flushed
 
             add r10, 8
 
             ret
 ;-------------------------------------------------
 
-;-------------------------------------------------
-; prints binary argument
+;=================================================
+; printf spec functions template
 ;
-; Args:     r10 - args stack ptr
+; Args:     %1 - max number of digits
+;           %2 - bits in one digit
+;           %3 - bit mask for one digit
+;
+; Assumes:  rax (higher half) - number
+;           r10 - args stack ptr
 ;           r13 - buffer size
 ;           r8d - symbol counter
 ;
 ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
-;-------------------------------------------------
+;=================================================
+%macro PRINTF_SPEC_TEMPLATE 3
+
+            test rax, rax
+            jne %%notNull
+
+            WRITE_TO_BUF '0'
+
+            jmp %%whileBreak
+
+%%notNull:
+            xor r12, r12 ; counter
+            xor bl, bl
+
+%%whileBody:
+            cmp r12, %1 ; sizeof
+            jae %%whileBreak
+
+            rol rax, %2
+            mov ecx, eax
+            and ecx, %3
+            inc r12
+
+            test bl, bl
+            jne %%printSymbol
+
+            test ecx, ecx
+            je %%whileBody
+
+            inc bl ; bl = 1
+%%printSymbol:
+
+            mov cl, HexTable[ecx]
+            WRITE_TO_BUF cl
+
+            jmp %%whileBody
+%%whileBreak:
+
+            add r10, 8
+
+            ret
+%endmacro
+;=================================================
+
 printf_spec_binary:
-
-            CHECK_REG_STACK_ARGS_BORDER
-
             WRITE_TO_BUF '0'
             WRITE_TO_BUF 'b'
 
-            mov eax, [r10]
-
-.isPositive:
-            mov r12, 2 ; base
-            call ConvertNumTo
-
-            add r10, 8
-
-            ret
-;-------------------------------------------------
-
-;-------------------------------------------------
-; prints octal argument
-;
-; Args:     r10 - args stack ptr
-;           r13 - buffer size
-;           r8d - symbol counter
-;
-; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
-;-------------------------------------------------
-printf_spec_octal:
-
             CHECK_REG_STACK_ARGS_BORDER
+            mov eax, [r10]
+            shl rax, 32
+            PRINTF_SPEC_TEMPLATE 32, 1, 0b1
 
+printf_spec_octal:
             WRITE_TO_BUF '0'
 
-            mov eax, [r10]
-
-.isPositive:
-            mov r12, 8 ; base
-            call ConvertNumTo
-
-            add r10, 8
-
-            ret
-;-------------------------------------------------
-
-;-------------------------------------------------
-; prints hex argument
-;
-; Args:     r10 - args stack ptr
-;           r13 - buffer size
-;           r8d - symbol counter
-;
-; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
-;-------------------------------------------------
-printf_spec_hex:
-
             CHECK_REG_STACK_ARGS_BORDER
+            mov eax, [r10]
+            shl rax, 31
+            PRINTF_SPEC_TEMPLATE 11, 3, 0b111
 
+printf_spec_hex:
             WRITE_TO_BUF '0'
             WRITE_TO_BUF 'x'
 
+            CHECK_REG_STACK_ARGS_BORDER
             mov eax, [r10]
-
-.isPositive:
-            mov r12, 16 ; base
-            call ConvertNumTo
-
-            add r10, 8
-
-            ret
-;-------------------------------------------------
+            shl rax, 32
+            PRINTF_SPEC_TEMPLATE 8, 4, 0b1111
 
 segment .data
 
 
 HexTable:   db "0123456789abcdef"
 
-BufCapacity equ 32
+BufCapacity equ 64
 
 Buffer:     times BufCapacity db 0
 BufferSize: dd 0
 
 UnknownSpecErrorMsg:    db "Printf error. Unknown format specified", 0x0a
 UnknownSpecErrorMsgLen  equ $ - UnknownSpecErrorMsg
+
+RegSaveArea: times 48 dq 0
