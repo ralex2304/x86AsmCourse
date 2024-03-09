@@ -3,7 +3,7 @@ section .text
 global main
 extern printf
 
-main:       push rbp
+main:       enter 0, 0
 
             mov rdi, Str
             mov rsi, Meow
@@ -12,7 +12,7 @@ main:       push rbp
 
             pop rbp
 
-            mov rax, 0
+            leave
             ret
 
 section .data
