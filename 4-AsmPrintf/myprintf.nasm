@@ -229,8 +229,8 @@ SavedArgs   equ 5 ; !!! needed for stack args addr calc
             mov bl, [r9]
 
             ; main switch
-            ; options in ASCII order: %, <large gap>, b,  c,  d,  f,  o,  s,  x
-            ;                         37              98  99 100 102 111 115 120
+            ; options in ASCII order: %, <large gap>, b,  c,  d,  f,  n,  o,  s,  x
+            ;                         37              98  99 100 102 110 111 115 120
             cmp bl, '%'
             jne .is_not_percent
             WRITE_TO_BUF bl
@@ -258,6 +258,8 @@ SavedArgs   equ 5 ; !!! needed for stack args addr calc
 .spec_str:  call printf_spec_string
             jmp .switch_end
 .spec_float:call printf_spec_float
+            jmp .switch_end
+.spec_n:    call printf_spec_n
             jmp .switch_end
 
 
@@ -641,73 +643,23 @@ printf_spec_float:
 ;-------------------------------------------------
 
 ;-------------------------------------------------
-; Writes to buffer unsigned double from long with precision 10^6
+; writes number of symbols pronted so far
 ;
-; Args:     rax - number
-;
-; Assumes:  r13 - dest pointer
+; Args:     r10 - args stack ptr
+;           r13 - buffer size
 ;           r8d - symbol counter
 ;
-; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11
+; Destr:    rax
 ;-------------------------------------------------
-ConvertDecDouble:
-            mov r12d, 10 ; base
+printf_spec_n:
 
-            mov rbx, 6
+            CHECK_REG_STACK_ARGS_BORDER
 
-.whileBody:
-            xor rdx, rdx
-            div r12d
-            ; eax = div
-            ; edx = mod
+            mov rax, [r10]
 
-            mov dl, HexTable[rdx]
-            mov byte [r13], dl
-            dec r13
+            mov dword [rax], r8d
 
-            dec rbx
-
-            test rbx, rbx
-            jne .noDot
-
-            mov byte [r13], '.'
-            dec r13
-.noDot:
-
-.whileClause:
-            test eax, eax
-            jne .whileBody
-
-            jmp .zeroWhileClause
-.zeroWhileBody:
-
-            mov byte [r13], '0'
-            dec r13
-
-            dec rbx
-
-.zeroWhileClause:
-            cmp rbx, 0
-            jg .zeroWhileBody
-
-            test rbx, rbx
-            jne .noZero
-
-            mov byte [r13], '.'
-            dec r13
-            mov byte [r13], '0'
-            dec r13
-.noZero:
-
-            mov r11, Buffer + BufCapacity - 1
-            sub r11, r13
-            push r11
-
-            inc r13
-            SYS_WRITE r13, r11
-
-            pop r11
-            add r8, r11
+            INC_ARGS_PTRS
 
             ret
 ;-------------------------------------------------
@@ -732,15 +684,16 @@ UnknownSpecErrorMsgLen  equ $ - UnknownSpecErrorMsg
 double_1e6:  dq 0x412e848000000000
 double_1     equ 0x3ff0000000000000
 
-; options in ASCII order: %, <large gap>, b,  c,  d,  f,  o,  s,  x
-;                         37              98  99 100 102 111 115 120
+; options in ASCII order: %, <large gap>, b,  c,  d,  f,  n,  o,  s,  x
+;                         37              98  99 100 102 110 111 115 120
 printf_jmp_table:
             dq _Z8myprintfPKcz.spec_bin
             dq _Z8myprintfPKcz.spec_char
             dq _Z8myprintfPKcz.spec_dec
             times ('f' - 'd' - 1) dq _Z8myprintfPKcz.spec_error
             dq _Z8myprintfPKcz.spec_float
-            times ('o' - 'f' - 1) dq _Z8myprintfPKcz.spec_error
+            times ('n' - 'f' - 1) dq _Z8myprintfPKcz.spec_error
+            dq _Z8myprintfPKcz.spec_n
             dq _Z8myprintfPKcz.spec_oct
             times ('s' - 'o' - 1) dq _Z8myprintfPKcz.spec_error
             dq _Z8myprintfPKcz.spec_str

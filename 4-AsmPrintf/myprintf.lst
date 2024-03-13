@@ -218,19 +218,19 @@
    218 0000006B 418A19                              mov bl, [r9]                ; bl  = [r9]        - current fmt symbol
    219 0000006E 4D31C0                              xor r8, r8                  ; r8d = 0           - symbol counter
    220                                                                          ; r9                - format string ptr
-   221 00000071 E900010000                          jmp .whileFmtEnter
+   221 00000071 E907010000                          jmp .whileFmtEnter
    222                                  .whileFmtBody:
    223                                  
    224 00000076 80FB25                              cmp bl, '%'
-   225 00000079 0F85B5000000                        jne .NotSpecialSymbol
+   225 00000079 0F85BC000000                        jne .NotSpecialSymbol
    226                                  
    227                                              ; go to next format symbol
    228 0000007F 49FFC1                              inc r9
    229 00000082 418A19                              mov bl, [r9]
    230                                  
    231                                              ; main switch
-   232                                              ; options in ASCII order: %, <large gap>, b,  c,  d,  f,  o,  s,  x
-   233                                              ;                         37              98  99 100 102 111 115 120
+   232                                              ; options in ASCII order: %, <large gap>, b,  c,  d,  f,  n,  o,  s,  x
+   233                                              ;                         37              98  99 100 102 110 111 115 120
    234 00000085 80FB25                              cmp bl, '%'
    235 00000088 753E                                jne .is_not_percent
    236                                              WRITE_TO_BUF bl
@@ -260,1360 +260,1343 @@
     82 000000B9 41889D[10000000]    <1>  mov byte [Buffer + r13], %1
     83 000000C0 41FFC0              <1>  inc r8d
     84 000000C3 49FFC5              <1>  inc r13
-   237 000000C6 EB6A                                jmp .switch_end
+   237 000000C6 EB71                                jmp .switch_end
    238                                  .is_not_percent:
    239                                  
    240 000000C8 80FB62                              cmp bl, 'b'
-   241 000000CB 7240                                jb .spec_error
+   241 000000CB 7247                                jb .spec_error
    242 000000CD 80FB78                              cmp bl, 'x'
-   243 000000D0 773B                                ja .spec_error
+   243 000000D0 7742                                ja .spec_error
    244                                  
    245 000000D2 488B0CDD[1FFDFFFF]                  mov rcx, printf_jmp_table[(rbx - 'b') * 8]
    246 000000DA FFE1                                jmp rcx
    247                                  
-   248 000000DC E8E4000000              .spec_char: call printf_spec_char
-   249 000000E1 EB4F                                jmp .switch_end
-   250 000000E3 E8E3020000              .spec_bin:  call printf_spec_binary
-   251 000000E8 EB48                                jmp .switch_end
-   252 000000EA E840040000              .spec_oct:  call printf_spec_octal
-   253 000000EF EB41                                jmp .switch_end
-   254 000000F1 E8D2010000              .spec_dec:  call printf_spec_decimal
-   255 000000F6 EB3A                                jmp .switch_end
-   256 000000F8 E85A050000              .spec_hex:  call printf_spec_hex
-   257 000000FD EB33                                jmp .switch_end
-   258 000000FF E83A010000              .spec_str:  call printf_spec_string
-   259 00000104 EB2C                                jmp .switch_end
-   260 00000106 E8B1060000              .spec_float:call printf_spec_float
-   261 0000010B EB25                                jmp .switch_end
-   262                                  
-   263                                  
-   264                                  .spec_error:
-   265                                              SYS_WRITE UnknownSpecErrorMsg, UnknownSpecErrorMsgLen
-    13 0000010D B801000000          <1>  mov rax, 0x01
-    14 00000112 BF01000000          <1>  mov rdi, 0x01
-    15 00000117 48BE-               <1>  mov rsi, %1
-    15 00000119 [0000000000000000]  <1>
-    16 00000121 BA27000000          <1>  mov rdx, %2
-    17 00000126 0F05                <1>  syscall
-   266 00000128 B8FFFFFFFF                          mov eax, -1
-   267 0000012D E988000000                          jmp .return
-   268                                  .switch_end:
-   269                                  
-   270                                  
-   271 00000132 EB3C                                jmp .whileFmtClause
-   272                                  .NotSpecialSymbol:
-   273                                              WRITE_TO_BUF bl
+   248 000000DC E8EB000000              .spec_char: call printf_spec_char
+   249 000000E1 EB56                                jmp .switch_end
+   250 000000E3 E8EA020000              .spec_bin:  call printf_spec_binary
+   251 000000E8 EB4F                                jmp .switch_end
+   252 000000EA E847040000              .spec_oct:  call printf_spec_octal
+   253 000000EF EB48                                jmp .switch_end
+   254 000000F1 E8D9010000              .spec_dec:  call printf_spec_decimal
+   255 000000F6 EB41                                jmp .switch_end
+   256 000000F8 E861050000              .spec_hex:  call printf_spec_hex
+   257 000000FD EB3A                                jmp .switch_end
+   258 000000FF E841010000              .spec_str:  call printf_spec_string
+   259 00000104 EB33                                jmp .switch_end
+   260 00000106 E8B8060000              .spec_float:call printf_spec_float
+   261 0000010B EB2C                                jmp .switch_end
+   262 0000010D E8D4070000              .spec_n:    call printf_spec_n
+   263 00000112 EB25                                jmp .switch_end
+   264                                  
+   265                                  
+   266                                  .spec_error:
+   267                                              SYS_WRITE UnknownSpecErrorMsg, UnknownSpecErrorMsgLen
+    13 00000114 B801000000          <1>  mov rax, 0x01
+    14 00000119 BF01000000          <1>  mov rdi, 0x01
+    15 0000011E 48BE-               <1>  mov rsi, %1
+    15 00000120 [0000000000000000]  <1>
+    16 00000128 BA27000000          <1>  mov rdx, %2
+    17 0000012D 0F05                <1>  syscall
+   268 0000012F B8FFFFFFFF                          mov eax, -1
+   269 00000134 E988000000                          jmp .return
+   270                                  .switch_end:
+   271                                  
+   272                                  
+   273 00000139 EB3C                                jmp .whileFmtClause
+   274                                  .NotSpecialSymbol:
+   275                                              WRITE_TO_BUF bl
     75                              <1> 
-    76 00000134 4983FD40            <1>  cmp r13, BufCapacity
-    77 00000138 7229                <1>  jb %%noFlush
+    76 0000013B 4983FD40            <1>  cmp r13, BufCapacity
+    77 0000013F 7229                <1>  jb %%noFlush
     78                              <1> 
     79                              <1>  FLUSH_BUFFER
-    34 0000013A 52                  <2>  push rdx
+    34 00000141 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 0000013B B801000000          <3>  mov rax, 0x01
-    14 00000140 BF01000000          <3>  mov rdi, 0x01
-    15 00000145 48BE-               <3>  mov rsi, %1
-    15 00000147 [1000000000000000]  <3>
-    16 0000014F 4C89EA              <3>  mov rdx, %2
-    17 00000152 0F05                <3>  syscall
+    13 00000142 B801000000          <3>  mov rax, 0x01
+    14 00000147 BF01000000          <3>  mov rdi, 0x01
+    15 0000014C 48BE-               <3>  mov rsi, %1
+    15 0000014E [1000000000000000]  <3>
+    16 00000156 4C89EA              <3>  mov rdx, %2
+    17 00000159 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 00000154 C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 0000015C 000000              <2>
-    40 0000015F 4D31ED              <2>  xor r13, r13
+    39 0000015B C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 00000163 000000              <2>
+    40 00000166 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 00000162 5A                  <2>  pop rdx
+    42 00000169 5A                  <2>  pop rdx
     80                              <1> %%noFlush:
     81                              <1> 
-    82 00000163 41889D[10000000]    <1>  mov byte [Buffer + r13], %1
-    83 0000016A 41FFC0              <1>  inc r8d
-    84 0000016D 49FFC5              <1>  inc r13
-   274                                  
-   275                                  .whileFmtClause:
-   276 00000170 49FFC1                              inc r9
-   277 00000173 418A19                              mov bl, [r9]
-   278                                  .whileFmtEnter:
-   279 00000176 84DB                                test bl, bl ; cmp bl, 0
-   280 00000178 0F85F8FEFFFF                        jne .whileFmtBody
-   281                                  
-   282                                  
-   283                                              ; flush buffer
-   284                                              FLUSH_IF_NEEDED
+    82 0000016A 41889D[10000000]    <1>  mov byte [Buffer + r13], %1
+    83 00000171 41FFC0              <1>  inc r8d
+    84 00000174 49FFC5              <1>  inc r13
+   276                                  
+   277                                  .whileFmtClause:
+   278 00000177 49FFC1                              inc r9
+   279 0000017A 418A19                              mov bl, [r9]
+   280                                  .whileFmtEnter:
+   281 0000017D 84DB                                test bl, bl ; cmp bl, 0
+   282 0000017F 0F85F1FEFFFF                        jne .whileFmtBody
+   283                                  
+   284                                  
+   285                                              ; flush buffer
+   286                                              FLUSH_IF_NEEDED
     54                              <1> 
-    55 0000017E 4D85ED              <1>  test r13, r13
-    56 00000181 7429                <1>  je %%isEmptyBuf
+    55 00000185 4D85ED              <1>  test r13, r13
+    56 00000188 7429                <1>  je %%isEmptyBuf
     57                              <1> 
     58                              <1>  FLUSH_BUFFER
-    34 00000183 52                  <2>  push rdx
+    34 0000018A 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 00000184 B801000000          <3>  mov rax, 0x01
-    14 00000189 BF01000000          <3>  mov rdi, 0x01
-    15 0000018E 48BE-               <3>  mov rsi, %1
-    15 00000190 [1000000000000000]  <3>
-    16 00000198 4C89EA              <3>  mov rdx, %2
-    17 0000019B 0F05                <3>  syscall
+    13 0000018B B801000000          <3>  mov rax, 0x01
+    14 00000190 BF01000000          <3>  mov rdi, 0x01
+    15 00000195 48BE-               <3>  mov rsi, %1
+    15 00000197 [1000000000000000]  <3>
+    16 0000019F 4C89EA              <3>  mov rdx, %2
+    17 000001A2 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 0000019D C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 000001A5 000000              <2>
-    40 000001A8 4D31ED              <2>  xor r13, r13
+    39 000001A4 C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 000001AC 000000              <2>
+    40 000001AF 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 000001AB 5A                  <2>  pop rdx
+    42 000001B2 5A                  <2>  pop rdx
     59                              <1> %%isEmptyBuf:
     60                              <1> 
-   285                                  
-   286 000001AC C70425[50000000]00-                 mov dword [BufferSize], 0
-   286 000001B4 000000             
    287                                  
-   288 000001B7 4489C0                              mov eax, r8d
-   289                                  .return:
-   290 000001BA C9                                  leave
-   291                                  
-   292 000001BB 415F                                pop r15
-   293 000001BD 415E                                pop r14
-   294 000001BF 415D                                pop r13
-   295 000001C1 415C                                pop r12
-   296 000001C3 5B                                  pop rbx
-   297 000001C4 C3                                  ret
-   298                                  ;-------------------------------------------------
-   299                                  
-   300                                  
+   288 000001B3 C70425[50000000]00-                 mov dword [BufferSize], 0
+   288 000001BB 000000             
+   289                                  
+   290 000001BE 4489C0                              mov eax, r8d
+   291                                  .return:
+   292 000001C1 C9                                  leave
+   293                                  
+   294 000001C2 415F                                pop r15
+   295 000001C4 415E                                pop r14
+   296 000001C6 415D                                pop r13
+   297 000001C8 415C                                pop r12
+   298 000001CA 5B                                  pop rbx
+   299 000001CB C3                                  ret
+   300                                  ;-------------------------------------------------
    301                                  
-   302                                  ;-------------------------------------------------
-   303                                  ; prints char from argument
-   304                                  ;
-   305                                  ; Args:     r10 - args stack ptr
-   306                                  ;           r13 - buffer size
-   307                                  ;           r8d - symbol counter
-   308                                  ;           r9  - format string ptr
-   309                                  ;
-   310                                  ; Destr:    bl, rax, rdi, rsi, rcx, r11
-   311                                  ;-------------------------------------------------
-   312                                  printf_spec_char:
-   313                                  
-   314                                              CHECK_REG_STACK_ARGS_BORDER
-    92                              <1> 
-    93 000001C5 4D85FF              <1>  test r15, r15
-    94 000001C8 750B                <1>  jne %%Float
-    95                              <1> 
-    96                              <1> 
-    97 000001CA 4939EA              <1>  cmp r10, rbp
-    98 000001CD 751D                <1>  jne %%Exit
-    99 000001CF 4983C238            <1>  add r10, 16 + 8 * SavedArgs
-   100                              <1> 
-   101 000001D3 EB17                <1>  jmp %%Exit
-   102                              <1> %%Float:
-   103 000001D5 488D45C0            <1>  lea rax, [rbp - 64]
-   104                              <1> 
-   105 000001D9 4939C2              <1>  cmp r10, rax
-   106 000001DC 750E                <1>  jne %%Exit
-   107                              <1> 
-   108 000001DE 4939EE              <1>  cmp r14, rbp
-   109 000001E1 7205                <1>  jb %%XmmArgsExist
-   110                              <1> 
-   111 000001E3 4D89F2              <1>  mov r10, r14
-   112 000001E6 EB04                <1>  jmp %%Exit
-   113                              <1> 
-   114                              <1> %%XmmArgsExist:
-   115 000001E8 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
-   116                              <1> 
-   117                              <1> 
-   118                              <1> %%Exit:
+   302                                  
+   303                                  
+   304                                  ;-------------------------------------------------
+   305                                  ; prints char from argument
+   306                                  ;
+   307                                  ; Args:     r10 - args stack ptr
+   308                                  ;           r13 - buffer size
+   309                                  ;           r8d - symbol counter
+   310                                  ;           r9  - format string ptr
+   311                                  ;
+   312                                  ; Destr:    bl, rax, rdi, rsi, rcx, r11
+   313                                  ;-------------------------------------------------
+   314                                  printf_spec_char:
    315                                  
-   316 000001EC 418A1A                              mov bl, [r10]
-   317                                              WRITE_TO_BUF bl
+   316                                              CHECK_REG_STACK_ARGS_BORDER
+    92                              <1> 
+    93 000001CC 4D85FF              <1>  test r15, r15
+    94 000001CF 750B                <1>  jne %%Float
+    95                              <1> 
+    96                              <1> 
+    97 000001D1 4939EA              <1>  cmp r10, rbp
+    98 000001D4 751D                <1>  jne %%Exit
+    99 000001D6 4983C238            <1>  add r10, 16 + 8 * SavedArgs
+   100                              <1> 
+   101 000001DA EB17                <1>  jmp %%Exit
+   102                              <1> %%Float:
+   103 000001DC 488D45C0            <1>  lea rax, [rbp - 64]
+   104                              <1> 
+   105 000001E0 4939C2              <1>  cmp r10, rax
+   106 000001E3 750E                <1>  jne %%Exit
+   107                              <1> 
+   108 000001E5 4939EE              <1>  cmp r14, rbp
+   109 000001E8 7205                <1>  jb %%XmmArgsExist
+   110                              <1> 
+   111 000001EA 4D89F2              <1>  mov r10, r14
+   112 000001ED EB04                <1>  jmp %%Exit
+   113                              <1> 
+   114                              <1> %%XmmArgsExist:
+   115 000001EF 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
+   116                              <1> 
+   117                              <1> 
+   118                              <1> %%Exit:
+   317                                  
+   318 000001F3 418A1A                              mov bl, [r10]
+   319                                              WRITE_TO_BUF bl
     75                              <1> 
-    76 000001EF 4983FD40            <1>  cmp r13, BufCapacity
-    77 000001F3 7229                <1>  jb %%noFlush
+    76 000001F6 4983FD40            <1>  cmp r13, BufCapacity
+    77 000001FA 7229                <1>  jb %%noFlush
     78                              <1> 
     79                              <1>  FLUSH_BUFFER
-    34 000001F5 52                  <2>  push rdx
+    34 000001FC 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 000001F6 B801000000          <3>  mov rax, 0x01
-    14 000001FB BF01000000          <3>  mov rdi, 0x01
-    15 00000200 48BE-               <3>  mov rsi, %1
-    15 00000202 [1000000000000000]  <3>
-    16 0000020A 4C89EA              <3>  mov rdx, %2
-    17 0000020D 0F05                <3>  syscall
+    13 000001FD B801000000          <3>  mov rax, 0x01
+    14 00000202 BF01000000          <3>  mov rdi, 0x01
+    15 00000207 48BE-               <3>  mov rsi, %1
+    15 00000209 [1000000000000000]  <3>
+    16 00000211 4C89EA              <3>  mov rdx, %2
+    17 00000214 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 0000020F C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 00000217 000000              <2>
-    40 0000021A 4D31ED              <2>  xor r13, r13
+    39 00000216 C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 0000021E 000000              <2>
+    40 00000221 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 0000021D 5A                  <2>  pop rdx
+    42 00000224 5A                  <2>  pop rdx
     80                              <1> %%noFlush:
     81                              <1> 
-    82 0000021E 41889D[10000000]    <1>  mov byte [Buffer + r13], %1
-    83 00000225 41FFC0              <1>  inc r8d
-    84 00000228 49FFC5              <1>  inc r13
-   318                                  
-   319                                              INC_ARGS_PTRS
-   151                              <1> 
-   152 0000022B 4939EA              <1>  cmp r10, rbp
-   153 0000022E 7209                <1>  jb %%regsLeft
-   154 00000230 4939EE              <1>  cmp r14, rbp
-   155 00000233 7204                <1>  jb %%regsLeft
-   156                              <1> 
-   157 00000235 4983C608            <1>  add r14, 8
-   158                              <1> %%regsLeft:
-   159 00000239 4983C208            <1>  add r10, 8
+    82 00000225 41889D[10000000]    <1>  mov byte [Buffer + r13], %1
+    83 0000022C 41FFC0              <1>  inc r8d
+    84 0000022F 49FFC5              <1>  inc r13
    320                                  
-   321 0000023D C3                                  ret
-   322                                  ;-------------------------------------------------
-   323                                  
-   324                                  ;-------------------------------------------------
-   325                                  ; prints string from argument
-   326                                  ;
-   327                                  ; Args:     r10 - args stack ptr
-   328                                  ;           r13 - buffer size
-   329                                  ;           r8d - symbol counter
-   330                                  ;           r9  - format string ptr
-   331                                  ;
-   332                                  ; Destr:    bl, rax, rdi, rsi, rcx, r11, r12
-   333                                  ;-------------------------------------------------
-   334                                  printf_spec_string:
-   335                                  
-   336                                              CHECK_REG_STACK_ARGS_BORDER
-    92                              <1> 
-    93 0000023E 4D85FF              <1>  test r15, r15
-    94 00000241 750B                <1>  jne %%Float
-    95                              <1> 
-    96                              <1> 
-    97 00000243 4939EA              <1>  cmp r10, rbp
-    98 00000246 751D                <1>  jne %%Exit
-    99 00000248 4983C238            <1>  add r10, 16 + 8 * SavedArgs
-   100                              <1> 
-   101 0000024C EB17                <1>  jmp %%Exit
-   102                              <1> %%Float:
-   103 0000024E 488D45C0            <1>  lea rax, [rbp - 64]
-   104                              <1> 
-   105 00000252 4939C2              <1>  cmp r10, rax
-   106 00000255 750E                <1>  jne %%Exit
-   107                              <1> 
-   108 00000257 4939EE              <1>  cmp r14, rbp
-   109 0000025A 7205                <1>  jb %%XmmArgsExist
-   110                              <1> 
-   111 0000025C 4D89F2              <1>  mov r10, r14
-   112 0000025F EB04                <1>  jmp %%Exit
-   113                              <1> 
-   114                              <1> %%XmmArgsExist:
-   115 00000261 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
-   116                              <1> 
-   117                              <1> 
-   118                              <1> %%Exit:
-   337                                  
-   338 00000265 4D8B22                              mov r12, [r10]
-   339 00000268 418A1C24                            mov bl, [r12]
-   340                                  
-   341 0000026C EB43                                jmp .whileEnter
-   342                                  .whileBody:
-   343                                              WRITE_TO_BUF bl
-    75                              <1> 
-    76 0000026E 4983FD40            <1>  cmp r13, BufCapacity
-    77 00000272 7229                <1>  jb %%noFlush
-    78                              <1> 
-    79                              <1>  FLUSH_BUFFER
-    34 00000274 52                  <2>  push rdx
-    35                              <2> 
-    36                              <2>  SYS_WRITE Buffer, r13
-    13 00000275 B801000000          <3>  mov rax, 0x01
-    14 0000027A BF01000000          <3>  mov rdi, 0x01
-    15 0000027F 48BE-               <3>  mov rsi, %1
-    15 00000281 [1000000000000000]  <3>
-    16 00000289 4C89EA              <3>  mov rdx, %2
-    17 0000028C 0F05                <3>  syscall
-    37                              <2> 
-    38                              <2> 
-    39 0000028E C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 00000296 000000              <2>
-    40 00000299 4D31ED              <2>  xor r13, r13
-    41                              <2> 
-    42 0000029C 5A                  <2>  pop rdx
-    80                              <1> %%noFlush:
-    81                              <1> 
-    82 0000029D 41889D[10000000]    <1>  mov byte [Buffer + r13], %1
-    83 000002A4 41FFC0              <1>  inc r8d
-    84 000002A7 49FFC5              <1>  inc r13
-   344                                  
-   345                                  
-   346 000002AA 49FFC4                              inc r12
-   347 000002AD 418A1C24                            mov bl, [r12]
-   348                                  .whileEnter:
-   349 000002B1 84DB                                test bl, bl ; cmp bl, 0
-   350 000002B3 75B9                                jne .whileBody
-   351                                  
-   352                                              INC_ARGS_PTRS
+   321                                              INC_ARGS_PTRS
    151                              <1> 
-   152 000002B5 4939EA              <1>  cmp r10, rbp
-   153 000002B8 7209                <1>  jb %%regsLeft
-   154 000002BA 4939EE              <1>  cmp r14, rbp
-   155 000002BD 7204                <1>  jb %%regsLeft
+   152 00000232 4939EA              <1>  cmp r10, rbp
+   153 00000235 7209                <1>  jb %%regsLeft
+   154 00000237 4939EE              <1>  cmp r14, rbp
+   155 0000023A 7204                <1>  jb %%regsLeft
    156                              <1> 
-   157 000002BF 4983C608            <1>  add r14, 8
+   157 0000023C 4983C608            <1>  add r14, 8
    158                              <1> %%regsLeft:
-   159 000002C3 4983C208            <1>  add r10, 8
-   353                                  
-   354 000002C7 C3                                  ret
-   355                                  ;-------------------------------------------------
-   356                                  
-   357                                  ;-------------------------------------------------
-   358                                  ; prints decimal argument
-   359                                  ;
-   360                                  ; Args:     r10 - args stack ptr
-   361                                  ;           r13 - buffer size
-   362                                  ;           r8d - symbol counter
-   363                                  ;
-   364                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
-   365                                  ;-------------------------------------------------
-   366                                  printf_spec_decimal:
-   367                                  
-   368                                              CHECK_REG_STACK_ARGS_BORDER
+   159 00000240 4983C208            <1>  add r10, 8
+   322                                  
+   323 00000244 C3                                  ret
+   324                                  ;-------------------------------------------------
+   325                                  
+   326                                  ;-------------------------------------------------
+   327                                  ; prints string from argument
+   328                                  ;
+   329                                  ; Args:     r10 - args stack ptr
+   330                                  ;           r13 - buffer size
+   331                                  ;           r8d - symbol counter
+   332                                  ;           r9  - format string ptr
+   333                                  ;
+   334                                  ; Destr:    bl, rax, rdi, rsi, rcx, r11, r12
+   335                                  ;-------------------------------------------------
+   336                                  printf_spec_string:
+   337                                  
+   338                                              CHECK_REG_STACK_ARGS_BORDER
     92                              <1> 
-    93 000002C8 4D85FF              <1>  test r15, r15
-    94 000002CB 750B                <1>  jne %%Float
+    93 00000245 4D85FF              <1>  test r15, r15
+    94 00000248 750B                <1>  jne %%Float
     95                              <1> 
     96                              <1> 
-    97 000002CD 4939EA              <1>  cmp r10, rbp
-    98 000002D0 751D                <1>  jne %%Exit
-    99 000002D2 4983C238            <1>  add r10, 16 + 8 * SavedArgs
+    97 0000024A 4939EA              <1>  cmp r10, rbp
+    98 0000024D 751D                <1>  jne %%Exit
+    99 0000024F 4983C238            <1>  add r10, 16 + 8 * SavedArgs
    100                              <1> 
-   101 000002D6 EB17                <1>  jmp %%Exit
+   101 00000253 EB17                <1>  jmp %%Exit
    102                              <1> %%Float:
-   103 000002D8 488D45C0            <1>  lea rax, [rbp - 64]
+   103 00000255 488D45C0            <1>  lea rax, [rbp - 64]
    104                              <1> 
-   105 000002DC 4939C2              <1>  cmp r10, rax
-   106 000002DF 750E                <1>  jne %%Exit
+   105 00000259 4939C2              <1>  cmp r10, rax
+   106 0000025C 750E                <1>  jne %%Exit
    107                              <1> 
-   108 000002E1 4939EE              <1>  cmp r14, rbp
-   109 000002E4 7205                <1>  jb %%XmmArgsExist
+   108 0000025E 4939EE              <1>  cmp r14, rbp
+   109 00000261 7205                <1>  jb %%XmmArgsExist
    110                              <1> 
-   111 000002E6 4D89F2              <1>  mov r10, r14
-   112 000002E9 EB04                <1>  jmp %%Exit
+   111 00000263 4D89F2              <1>  mov r10, r14
+   112 00000266 EB04                <1>  jmp %%Exit
    113                              <1> 
    114                              <1> %%XmmArgsExist:
-   115 000002EB 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
+   115 00000268 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
    116                              <1> 
    117                              <1> 
    118                              <1> %%Exit:
-   369                                  
-   370 000002EF 418B02                              mov eax, [r10]
-   371                                  
-   372 000002F2 85C0                                test eax, eax
-   373 000002F4 7D41                                jge .isPositive
-   374                                  
-   375                                              ; is negative
-   376 000002F6 50                                  push rax
-   377                                              WRITE_TO_BUF '-'
+   339                                  
+   340 0000026C 4D8B22                              mov r12, [r10]
+   341 0000026F 418A1C24                            mov bl, [r12]
+   342                                  
+   343 00000273 EB43                                jmp .whileEnter
+   344                                  .whileBody:
+   345                                              WRITE_TO_BUF bl
     75                              <1> 
-    76 000002F7 4983FD40            <1>  cmp r13, BufCapacity
-    77 000002FB 7229                <1>  jb %%noFlush
+    76 00000275 4983FD40            <1>  cmp r13, BufCapacity
+    77 00000279 7229                <1>  jb %%noFlush
     78                              <1> 
     79                              <1>  FLUSH_BUFFER
-    34 000002FD 52                  <2>  push rdx
+    34 0000027B 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 000002FE B801000000          <3>  mov rax, 0x01
-    14 00000303 BF01000000          <3>  mov rdi, 0x01
-    15 00000308 48BE-               <3>  mov rsi, %1
-    15 0000030A [1000000000000000]  <3>
-    16 00000312 4C89EA              <3>  mov rdx, %2
-    17 00000315 0F05                <3>  syscall
+    13 0000027C B801000000          <3>  mov rax, 0x01
+    14 00000281 BF01000000          <3>  mov rdi, 0x01
+    15 00000286 48BE-               <3>  mov rsi, %1
+    15 00000288 [1000000000000000]  <3>
+    16 00000290 4C89EA              <3>  mov rdx, %2
+    17 00000293 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 00000317 C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 0000031F 000000              <2>
-    40 00000322 4D31ED              <2>  xor r13, r13
+    39 00000295 C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 0000029D 000000              <2>
+    40 000002A0 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 00000325 5A                  <2>  pop rdx
+    42 000002A3 5A                  <2>  pop rdx
     80                              <1> %%noFlush:
     81                              <1> 
-    82 00000326 41C685[10000000]2D  <1>  mov byte [Buffer + r13], %1
-    83 0000032E 41FFC0              <1>  inc r8d
-    84 00000331 49FFC5              <1>  inc r13
-   378 00000334 58                                  pop rax
-   379                                  
-   380 00000335 F7D8                                neg eax
+    82 000002A4 41889D[10000000]    <1>  mov byte [Buffer + r13], %1
+    83 000002AB 41FFC0              <1>  inc r8d
+    84 000002AE 49FFC5              <1>  inc r13
+   346                                  
+   347                                  
+   348 000002B1 49FFC4                              inc r12
+   349 000002B4 418A1C24                            mov bl, [r12]
+   350                                  .whileEnter:
+   351 000002B8 84DB                                test bl, bl ; cmp bl, 0
+   352 000002BA 75B9                                jne .whileBody
+   353                                  
+   354                                              INC_ARGS_PTRS
+   151                              <1> 
+   152 000002BC 4939EA              <1>  cmp r10, rbp
+   153 000002BF 7209                <1>  jb %%regsLeft
+   154 000002C1 4939EE              <1>  cmp r14, rbp
+   155 000002C4 7204                <1>  jb %%regsLeft
+   156                              <1> 
+   157 000002C6 4983C608            <1>  add r14, 8
+   158                              <1> %%regsLeft:
+   159 000002CA 4983C208            <1>  add r10, 8
+   355                                  
+   356 000002CE C3                                  ret
+   357                                  ;-------------------------------------------------
+   358                                  
+   359                                  ;-------------------------------------------------
+   360                                  ; prints decimal argument
+   361                                  ;
+   362                                  ; Args:     r10 - args stack ptr
+   363                                  ;           r13 - buffer size
+   364                                  ;           r8d - symbol counter
+   365                                  ;
+   366                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
+   367                                  ;-------------------------------------------------
+   368                                  printf_spec_decimal:
+   369                                  
+   370                                              CHECK_REG_STACK_ARGS_BORDER
+    92                              <1> 
+    93 000002CF 4D85FF              <1>  test r15, r15
+    94 000002D2 750B                <1>  jne %%Float
+    95                              <1> 
+    96                              <1> 
+    97 000002D4 4939EA              <1>  cmp r10, rbp
+    98 000002D7 751D                <1>  jne %%Exit
+    99 000002D9 4983C238            <1>  add r10, 16 + 8 * SavedArgs
+   100                              <1> 
+   101 000002DD EB17                <1>  jmp %%Exit
+   102                              <1> %%Float:
+   103 000002DF 488D45C0            <1>  lea rax, [rbp - 64]
+   104                              <1> 
+   105 000002E3 4939C2              <1>  cmp r10, rax
+   106 000002E6 750E                <1>  jne %%Exit
+   107                              <1> 
+   108 000002E8 4939EE              <1>  cmp r14, rbp
+   109 000002EB 7205                <1>  jb %%XmmArgsExist
+   110                              <1> 
+   111 000002ED 4D89F2              <1>  mov r10, r14
+   112 000002F0 EB04                <1>  jmp %%Exit
+   113                              <1> 
+   114                              <1> %%XmmArgsExist:
+   115 000002F2 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
+   116                              <1> 
+   117                              <1> 
+   118                              <1> %%Exit:
+   371                                  
+   372 000002F6 418B02                              mov eax, [r10]
+   373                                  
+   374 000002F9 85C0                                test eax, eax
+   375 000002FB 7D41                                jge .isPositive
+   376                                  
+   377                                              ; is negative
+   378 000002FD 50                                  push rax
+   379                                              WRITE_TO_BUF '-'
+    75                              <1> 
+    76 000002FE 4983FD40            <1>  cmp r13, BufCapacity
+    77 00000302 7229                <1>  jb %%noFlush
+    78                              <1> 
+    79                              <1>  FLUSH_BUFFER
+    34 00000304 52                  <2>  push rdx
+    35                              <2> 
+    36                              <2>  SYS_WRITE Buffer, r13
+    13 00000305 B801000000          <3>  mov rax, 0x01
+    14 0000030A BF01000000          <3>  mov rdi, 0x01
+    15 0000030F 48BE-               <3>  mov rsi, %1
+    15 00000311 [1000000000000000]  <3>
+    16 00000319 4C89EA              <3>  mov rdx, %2
+    17 0000031C 0F05                <3>  syscall
+    37                              <2> 
+    38                              <2> 
+    39 0000031E C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 00000326 000000              <2>
+    40 00000329 4D31ED              <2>  xor r13, r13
+    41                              <2> 
+    42 0000032C 5A                  <2>  pop rdx
+    80                              <1> %%noFlush:
+    81                              <1> 
+    82 0000032D 41C685[10000000]2D  <1>  mov byte [Buffer + r13], %1
+    83 00000335 41FFC0              <1>  inc r8d
+    84 00000338 49FFC5              <1>  inc r13
+   380 0000033B 58                                  pop rax
    381                                  
-   382                                  .isPositive:
+   382 0000033C F7D8                                neg eax
    383                                  
-   384 00000337 50                                  push rax
-   385                                              FLUSH_IF_NEEDED
+   384                                  .isPositive:
+   385                                  
+   386 0000033E 50                                  push rax
+   387                                              FLUSH_IF_NEEDED
     54                              <1> 
-    55 00000338 4D85ED              <1>  test r13, r13
-    56 0000033B 7429                <1>  je %%isEmptyBuf
+    55 0000033F 4D85ED              <1>  test r13, r13
+    56 00000342 7429                <1>  je %%isEmptyBuf
     57                              <1> 
     58                              <1>  FLUSH_BUFFER
-    34 0000033D 52                  <2>  push rdx
+    34 00000344 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 0000033E B801000000          <3>  mov rax, 0x01
-    14 00000343 BF01000000          <3>  mov rdi, 0x01
-    15 00000348 48BE-               <3>  mov rsi, %1
-    15 0000034A [1000000000000000]  <3>
-    16 00000352 4C89EA              <3>  mov rdx, %2
-    17 00000355 0F05                <3>  syscall
+    13 00000345 B801000000          <3>  mov rax, 0x01
+    14 0000034A BF01000000          <3>  mov rdi, 0x01
+    15 0000034F 48BE-               <3>  mov rsi, %1
+    15 00000351 [1000000000000000]  <3>
+    16 00000359 4C89EA              <3>  mov rdx, %2
+    17 0000035C 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 00000357 C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 0000035F 000000              <2>
-    40 00000362 4D31ED              <2>  xor r13, r13
+    39 0000035E C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 00000366 000000              <2>
+    40 00000369 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 00000365 5A                  <2>  pop rdx
+    42 0000036C 5A                  <2>  pop rdx
     59                              <1> %%isEmptyBuf:
     60                              <1> 
-   386 00000366 58                                  pop rax
-   387                                  
-   388 00000367 4C8D2C25[4F000000]                  lea r13, [Buffer + BufCapacity - 1] ; r13 - output str pointer
+   388 0000036D 58                                  pop rax
    389                                  
-   390 0000036F 41BC0A000000                        mov r12d, 10 ; base
-   391                                  .whileBody:
-   392 00000375 4831D2                              xor rdx, rdx
-   393 00000378 41F7F4                              div r12d
-   394                                              ; eax = div
-   395                                              ; edx = mod
-   396                                  
-   397 0000037B 8A92[00000000]                      mov dl, HexTable[rdx]
-   398 00000381 41885500                            mov byte [r13], dl
-   399 00000385 49FFCD                              dec r13
-   400                                  
-   401                                  .whileClause:
-   402 00000388 85C0                                test eax, eax
-   403 0000038A 75E9                                jne .whileBody
-   404                                  
-   405 0000038C 49BB-                               mov r11, Buffer + BufCapacity - 1
-   405 0000038E [4F00000000000000] 
-   406 00000396 4D29EB                              sub r11, r13
-   407                                  
-   408 00000399 4153                                push r11
+   390 0000036E 4C8D2C25[4F000000]                  lea r13, [Buffer + BufCapacity - 1] ; r13 - output str pointer
+   391                                  
+   392 00000376 41BC0A000000                        mov r12d, 10 ; base
+   393                                  .whileBody:
+   394 0000037C 4831D2                              xor rdx, rdx
+   395 0000037F 41F7F4                              div r12d
+   396                                              ; eax = div
+   397                                              ; edx = mod
+   398                                  
+   399 00000382 8A92[00000000]                      mov dl, HexTable[rdx]
+   400 00000388 41885500                            mov byte [r13], dl
+   401 0000038C 49FFCD                              dec r13
+   402                                  
+   403                                  .whileClause:
+   404 0000038F 85C0                                test eax, eax
+   405 00000391 75E9                                jne .whileBody
+   406                                  
+   407 00000393 49BB-                               mov r11, Buffer + BufCapacity - 1
+   407 00000395 [4F00000000000000] 
+   408 0000039D 4D29EB                              sub r11, r13
    409                                  
-   410 0000039B 49FFC5                              inc r13
-   411                                              SYS_WRITE r13, r11
-    13 0000039E B801000000          <1>  mov rax, 0x01
-    14 000003A3 BF01000000          <1>  mov rdi, 0x01
-    15 000003A8 4C89EE              <1>  mov rsi, %1
-    16 000003AB 4C89DA              <1>  mov rdx, %2
-    17 000003AE 0F05                <1>  syscall
-   412                                  
-   413 000003B0 415B                                pop r11
-   414 000003B2 4D01D8                              add r8, r11
-   415                                  
-   416 000003B5 4D31ED                              xor r13, r13 ; buffer is flushed
+   410 000003A0 4153                                push r11
+   411                                  
+   412 000003A2 49FFC5                              inc r13
+   413                                              SYS_WRITE r13, r11
+    13 000003A5 B801000000          <1>  mov rax, 0x01
+    14 000003AA BF01000000          <1>  mov rdi, 0x01
+    15 000003AF 4C89EE              <1>  mov rsi, %1
+    16 000003B2 4C89DA              <1>  mov rdx, %2
+    17 000003B5 0F05                <1>  syscall
+   414                                  
+   415 000003B7 415B                                pop r11
+   416 000003B9 4D01D8                              add r8, r11
    417                                  
-   418                                              INC_ARGS_PTRS
-   151                              <1> 
-   152 000003B8 4939EA              <1>  cmp r10, rbp
-   153 000003BB 7209                <1>  jb %%regsLeft
-   154 000003BD 4939EE              <1>  cmp r14, rbp
-   155 000003C0 7204                <1>  jb %%regsLeft
-   156                              <1> 
-   157 000003C2 4983C608            <1>  add r14, 8
-   158                              <1> %%regsLeft:
-   159 000003C6 4983C208            <1>  add r10, 8
+   418 000003BC 4D31ED                              xor r13, r13 ; buffer is flushed
    419                                  
-   420 000003CA C3                                  ret
-   421                                  ;-------------------------------------------------
-   422                                  
-   423                                  ;=================================================
-   424                                  ; printf spec functions template
-   425                                  ;
-   426                                  ; Args:     %1 - max number of digits
-   427                                  ;           %2 - bits in one digit
-   428                                  ;           %3 - bit mask for one digit
-   429                                  ;
-   430                                  ; Assumes:  rax (higher half) - number
-   431                                  ;           r10 - args stack ptr
-   432                                  ;           r13 - buffer size
-   433                                  ;           r8d - symbol counter
-   434                                  ;
-   435                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
-   436                                  ;=================================================
-   437                                  %macro PRINTF_SPEC_TEMPLATE 3
-   438                                  
-   439                                              test rax, rax
-   440                                              jne %%notNull
-   441                                  
-   442                                              WRITE_TO_BUF '0'
+   420                                              INC_ARGS_PTRS
+   151                              <1> 
+   152 000003BF 4939EA              <1>  cmp r10, rbp
+   153 000003C2 7209                <1>  jb %%regsLeft
+   154 000003C4 4939EE              <1>  cmp r14, rbp
+   155 000003C7 7204                <1>  jb %%regsLeft
+   156                              <1> 
+   157 000003C9 4983C608            <1>  add r14, 8
+   158                              <1> %%regsLeft:
+   159 000003CD 4983C208            <1>  add r10, 8
+   421                                  
+   422 000003D1 C3                                  ret
+   423                                  ;-------------------------------------------------
+   424                                  
+   425                                  ;=================================================
+   426                                  ; printf spec functions template
+   427                                  ;
+   428                                  ; Args:     %1 - max number of digits
+   429                                  ;           %2 - bits in one digit
+   430                                  ;           %3 - bit mask for one digit
+   431                                  ;
+   432                                  ; Assumes:  rax (higher half) - number
+   433                                  ;           r10 - args stack ptr
+   434                                  ;           r13 - buffer size
+   435                                  ;           r8d - symbol counter
+   436                                  ;
+   437                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
+   438                                  ;=================================================
+   439                                  %macro PRINTF_SPEC_TEMPLATE 3
+   440                                  
+   441                                              test rax, rax
+   442                                              jne %%notNull
    443                                  
-   444                                              jmp %%whileBreak
+   444                                              WRITE_TO_BUF '0'
    445                                  
-   446                                  %%notNull:
-   447                                              xor r12, r12 ; counter
-   448                                              xor bl, bl
-   449                                  
-   450                                  %%whileBody:
-   451                                              cmp r12, %1 ; sizeof
-   452                                              jae %%whileBreak
-   453                                  
-   454                                              rol rax, %2
-   455                                              mov ecx, eax
-   456                                              and ecx, %3
-   457                                              inc r12
-   458                                  
-   459                                              test bl, bl
-   460                                              jne %%printSymbol
-   461                                  
-   462                                              test ecx, ecx
-   463                                              je %%whileBody
-   464                                  
-   465                                              inc bl ; bl = 1
-   466                                  %%printSymbol:
-   467                                  
-   468                                              mov cl, HexTable[ecx]
-   469                                              WRITE_TO_BUF cl
-   470                                  
-   471                                              jmp %%whileBody
-   472                                  %%whileBreak:
-   473                                  
-   474                                              INC_ARGS_PTRS
+   446                                              jmp %%whileBreak
+   447                                  
+   448                                  %%notNull:
+   449                                              xor r12, r12 ; counter
+   450                                              xor bl, bl
+   451                                  
+   452                                  %%whileBody:
+   453                                              cmp r12, %1 ; sizeof
+   454                                              jae %%whileBreak
+   455                                  
+   456                                              rol rax, %2
+   457                                              mov ecx, eax
+   458                                              and ecx, %3
+   459                                              inc r12
+   460                                  
+   461                                              test bl, bl
+   462                                              jne %%printSymbol
+   463                                  
+   464                                              test ecx, ecx
+   465                                              je %%whileBody
+   466                                  
+   467                                              inc bl ; bl = 1
+   468                                  %%printSymbol:
+   469                                  
+   470                                              mov cl, HexTable[ecx]
+   471                                              WRITE_TO_BUF cl
+   472                                  
+   473                                              jmp %%whileBody
+   474                                  %%whileBreak:
    475                                  
-   476                                              ret
-   477                                  %endmacro
-   478                                  ;=================================================
-   479                                  
-   480                                  ;-------------------------------------------------
-   481                                  ; printf binary
-   482                                  ;
-   483                                  ; Assumes:  rax (higher half) - number
-   484                                  ;           r10 - args stack ptr
-   485                                  ;           r13 - buffer size
-   486                                  ;           r8d - symbol counter
-   487                                  ;
-   488                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
-   489                                  ;-------------------------------------------------
-   490                                  printf_spec_binary:
-   491                                              WRITE_TO_BUF '0'
+   476                                              INC_ARGS_PTRS
+   477                                  
+   478                                              ret
+   479                                  %endmacro
+   480                                  ;=================================================
+   481                                  
+   482                                  ;-------------------------------------------------
+   483                                  ; printf binary
+   484                                  ;
+   485                                  ; Assumes:  rax (higher half) - number
+   486                                  ;           r10 - args stack ptr
+   487                                  ;           r13 - buffer size
+   488                                  ;           r8d - symbol counter
+   489                                  ;
+   490                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
+   491                                  ;-------------------------------------------------
+   492                                  printf_spec_binary:
+   493                                              WRITE_TO_BUF '0'
     75                              <1> 
-    76 000003CB 4983FD40            <1>  cmp r13, BufCapacity
-    77 000003CF 7229                <1>  jb %%noFlush
+    76 000003D2 4983FD40            <1>  cmp r13, BufCapacity
+    77 000003D6 7229                <1>  jb %%noFlush
     78                              <1> 
     79                              <1>  FLUSH_BUFFER
-    34 000003D1 52                  <2>  push rdx
+    34 000003D8 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 000003D2 B801000000          <3>  mov rax, 0x01
-    14 000003D7 BF01000000          <3>  mov rdi, 0x01
-    15 000003DC 48BE-               <3>  mov rsi, %1
-    15 000003DE [1000000000000000]  <3>
-    16 000003E6 4C89EA              <3>  mov rdx, %2
-    17 000003E9 0F05                <3>  syscall
+    13 000003D9 B801000000          <3>  mov rax, 0x01
+    14 000003DE BF01000000          <3>  mov rdi, 0x01
+    15 000003E3 48BE-               <3>  mov rsi, %1
+    15 000003E5 [1000000000000000]  <3>
+    16 000003ED 4C89EA              <3>  mov rdx, %2
+    17 000003F0 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 000003EB C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 000003F3 000000              <2>
-    40 000003F6 4D31ED              <2>  xor r13, r13
+    39 000003F2 C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 000003FA 000000              <2>
+    40 000003FD 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 000003F9 5A                  <2>  pop rdx
+    42 00000400 5A                  <2>  pop rdx
     80                              <1> %%noFlush:
     81                              <1> 
-    82 000003FA 41C685[10000000]30  <1>  mov byte [Buffer + r13], %1
-    83 00000402 41FFC0              <1>  inc r8d
-    84 00000405 49FFC5              <1>  inc r13
-   492                                              WRITE_TO_BUF 'b'
+    82 00000401 41C685[10000000]30  <1>  mov byte [Buffer + r13], %1
+    83 00000409 41FFC0              <1>  inc r8d
+    84 0000040C 49FFC5              <1>  inc r13
+   494                                              WRITE_TO_BUF 'b'
     75                              <1> 
-    76 00000408 4983FD40            <1>  cmp r13, BufCapacity
-    77 0000040C 7229                <1>  jb %%noFlush
+    76 0000040F 4983FD40            <1>  cmp r13, BufCapacity
+    77 00000413 7229                <1>  jb %%noFlush
     78                              <1> 
     79                              <1>  FLUSH_BUFFER
-    34 0000040E 52                  <2>  push rdx
+    34 00000415 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 0000040F B801000000          <3>  mov rax, 0x01
-    14 00000414 BF01000000          <3>  mov rdi, 0x01
-    15 00000419 48BE-               <3>  mov rsi, %1
-    15 0000041B [1000000000000000]  <3>
-    16 00000423 4C89EA              <3>  mov rdx, %2
-    17 00000426 0F05                <3>  syscall
+    13 00000416 B801000000          <3>  mov rax, 0x01
+    14 0000041B BF01000000          <3>  mov rdi, 0x01
+    15 00000420 48BE-               <3>  mov rsi, %1
+    15 00000422 [1000000000000000]  <3>
+    16 0000042A 4C89EA              <3>  mov rdx, %2
+    17 0000042D 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 00000428 C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 00000430 000000              <2>
-    40 00000433 4D31ED              <2>  xor r13, r13
+    39 0000042F C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 00000437 000000              <2>
+    40 0000043A 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 00000436 5A                  <2>  pop rdx
+    42 0000043D 5A                  <2>  pop rdx
     80                              <1> %%noFlush:
     81                              <1> 
-    82 00000437 41C685[10000000]62  <1>  mov byte [Buffer + r13], %1
-    83 0000043F 41FFC0              <1>  inc r8d
-    84 00000442 49FFC5              <1>  inc r13
-   493                                  
-   494                                              CHECK_REG_STACK_ARGS_BORDER
+    82 0000043E 41C685[10000000]62  <1>  mov byte [Buffer + r13], %1
+    83 00000446 41FFC0              <1>  inc r8d
+    84 00000449 49FFC5              <1>  inc r13
+   495                                  
+   496                                              CHECK_REG_STACK_ARGS_BORDER
     92                              <1> 
-    93 00000445 4D85FF              <1>  test r15, r15
-    94 00000448 750B                <1>  jne %%Float
+    93 0000044C 4D85FF              <1>  test r15, r15
+    94 0000044F 750B                <1>  jne %%Float
     95                              <1> 
     96                              <1> 
-    97 0000044A 4939EA              <1>  cmp r10, rbp
-    98 0000044D 751D                <1>  jne %%Exit
-    99 0000044F 4983C238            <1>  add r10, 16 + 8 * SavedArgs
+    97 00000451 4939EA              <1>  cmp r10, rbp
+    98 00000454 751D                <1>  jne %%Exit
+    99 00000456 4983C238            <1>  add r10, 16 + 8 * SavedArgs
    100                              <1> 
-   101 00000453 EB17                <1>  jmp %%Exit
+   101 0000045A EB17                <1>  jmp %%Exit
    102                              <1> %%Float:
-   103 00000455 488D45C0            <1>  lea rax, [rbp - 64]
+   103 0000045C 488D45C0            <1>  lea rax, [rbp - 64]
    104                              <1> 
-   105 00000459 4939C2              <1>  cmp r10, rax
-   106 0000045C 750E                <1>  jne %%Exit
+   105 00000460 4939C2              <1>  cmp r10, rax
+   106 00000463 750E                <1>  jne %%Exit
    107                              <1> 
-   108 0000045E 4939EE              <1>  cmp r14, rbp
-   109 00000461 7205                <1>  jb %%XmmArgsExist
+   108 00000465 4939EE              <1>  cmp r14, rbp
+   109 00000468 7205                <1>  jb %%XmmArgsExist
    110                              <1> 
-   111 00000463 4D89F2              <1>  mov r10, r14
-   112 00000466 EB04                <1>  jmp %%Exit
+   111 0000046A 4D89F2              <1>  mov r10, r14
+   112 0000046D EB04                <1>  jmp %%Exit
    113                              <1> 
    114                              <1> %%XmmArgsExist:
-   115 00000468 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
+   115 0000046F 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
    116                              <1> 
    117                              <1> 
    118                              <1> %%Exit:
-   495 0000046C 418B02                              mov eax, [r10]
-   496 0000046F 48C1E020                            shl rax, 32
-   497                                              PRINTF_SPEC_TEMPLATE 32, 1, 0b1
-   438                              <1> 
-   439 00000473 4885C0              <1>  test rax, rax
-   440 00000476 753F                <1>  jne %%notNull
-   441                              <1> 
-   442                              <1>  WRITE_TO_BUF '0'
-    75                              <2> 
-    76 00000478 4983FD40            <2>  cmp r13, BufCapacity
-    77 0000047C 7229                <2>  jb %%noFlush
-    78                              <2> 
-    79                              <2>  FLUSH_BUFFER
-    34 0000047E 52                  <3>  push rdx
-    35                              <3> 
-    36                              <3>  SYS_WRITE Buffer, r13
-    13 0000047F B801000000          <4>  mov rax, 0x01
-    14 00000484 BF01000000          <4>  mov rdi, 0x01
-    15 00000489 48BE-               <4>  mov rsi, %1
-    15 0000048B [1000000000000000]  <4>
-    16 00000493 4C89EA              <4>  mov rdx, %2
-    17 00000496 0F05                <4>  syscall
-    37                              <3> 
-    38                              <3> 
-    39 00000498 C70425[50000000]00- <3>  mov dword [BufferSize], 0
-    39 000004A0 000000              <3>
-    40 000004A3 4D31ED              <3>  xor r13, r13
-    41                              <3> 
-    42 000004A6 5A                  <3>  pop rdx
-    80                              <2> %%noFlush:
-    81                              <2> 
-    82 000004A7 41C685[10000000]30  <2>  mov byte [Buffer + r13], %1
-    83 000004AF 41FFC0              <2>  inc r8d
-    84 000004B2 49FFC5              <2>  inc r13
+   497 00000473 418B02                              mov eax, [r10]
+   498 00000476 48C1E020                            shl rax, 32
+   499                                              PRINTF_SPEC_TEMPLATE 32, 1, 0b1
+   440                              <1> 
+   441 0000047A 4885C0              <1>  test rax, rax
+   442 0000047D 753F                <1>  jne %%notNull
    443                              <1> 
-   444 000004B5 EB65                <1>  jmp %%whileBreak
-   445                              <1> 
-   446                              <1> %%notNull:
-   447 000004B7 4D31E4              <1>  xor r12, r12
-   448 000004BA 30DB                <1>  xor bl, bl
-   449                              <1> 
-   450                              <1> %%whileBody:
-   451 000004BC 4983FC20            <1>  cmp r12, %1
-   452 000004C0 735A                <1>  jae %%whileBreak
-   453                              <1> 
-   454 000004C2 48D1C0              <1>  rol rax, %2
-   455 000004C5 89C1                <1>  mov ecx, eax
-   456 000004C7 83E101              <1>  and ecx, %3
-   457 000004CA 49FFC4              <1>  inc r12
-   458                              <1> 
-   459 000004CD 84DB                <1>  test bl, bl
-   460 000004CF 7506                <1>  jne %%printSymbol
-   461                              <1> 
-   462 000004D1 85C9                <1>  test ecx, ecx
-   463 000004D3 74E7                <1>  je %%whileBody
-   464                              <1> 
-   465 000004D5 FEC3                <1>  inc bl
-   466                              <1> %%printSymbol:
-   467                              <1> 
-   468 000004D7 678A89[00000000]    <1>  mov cl, HexTable[ecx]
-   469                              <1>  WRITE_TO_BUF cl
+   444                              <1>  WRITE_TO_BUF '0'
     75                              <2> 
-    76 000004DE 4983FD40            <2>  cmp r13, BufCapacity
-    77 000004E2 7229                <2>  jb %%noFlush
+    76 0000047F 4983FD40            <2>  cmp r13, BufCapacity
+    77 00000483 7229                <2>  jb %%noFlush
     78                              <2> 
     79                              <2>  FLUSH_BUFFER
-    34 000004E4 52                  <3>  push rdx
+    34 00000485 52                  <3>  push rdx
     35                              <3> 
     36                              <3>  SYS_WRITE Buffer, r13
-    13 000004E5 B801000000          <4>  mov rax, 0x01
-    14 000004EA BF01000000          <4>  mov rdi, 0x01
-    15 000004EF 48BE-               <4>  mov rsi, %1
-    15 000004F1 [1000000000000000]  <4>
-    16 000004F9 4C89EA              <4>  mov rdx, %2
-    17 000004FC 0F05                <4>  syscall
+    13 00000486 B801000000          <4>  mov rax, 0x01
+    14 0000048B BF01000000          <4>  mov rdi, 0x01
+    15 00000490 48BE-               <4>  mov rsi, %1
+    15 00000492 [1000000000000000]  <4>
+    16 0000049A 4C89EA              <4>  mov rdx, %2
+    17 0000049D 0F05                <4>  syscall
     37                              <3> 
     38                              <3> 
-    39 000004FE C70425[50000000]00- <3>  mov dword [BufferSize], 0
-    39 00000506 000000              <3>
-    40 00000509 4D31ED              <3>  xor r13, r13
+    39 0000049F C70425[50000000]00- <3>  mov dword [BufferSize], 0
+    39 000004A7 000000              <3>
+    40 000004AA 4D31ED              <3>  xor r13, r13
     41                              <3> 
-    42 0000050C 5A                  <3>  pop rdx
+    42 000004AD 5A                  <3>  pop rdx
     80                              <2> %%noFlush:
     81                              <2> 
-    82 0000050D 41888D[10000000]    <2>  mov byte [Buffer + r13], %1
-    83 00000514 41FFC0              <2>  inc r8d
-    84 00000517 49FFC5              <2>  inc r13
-   470                              <1> 
-   471 0000051A EBA0                <1>  jmp %%whileBody
-   472                              <1> %%whileBreak:
-   473                              <1> 
-   474                              <1>  INC_ARGS_PTRS
-   151                              <2> 
-   152 0000051C 4939EA              <2>  cmp r10, rbp
-   153 0000051F 7209                <2>  jb %%regsLeft
-   154 00000521 4939EE              <2>  cmp r14, rbp
-   155 00000524 7204                <2>  jb %%regsLeft
-   156                              <2> 
-   157 00000526 4983C608            <2>  add r14, 8
-   158                              <2> %%regsLeft:
-   159 0000052A 4983C208            <2>  add r10, 8
+    82 000004AE 41C685[10000000]30  <2>  mov byte [Buffer + r13], %1
+    83 000004B6 41FFC0              <2>  inc r8d
+    84 000004B9 49FFC5              <2>  inc r13
+   445                              <1> 
+   446 000004BC EB65                <1>  jmp %%whileBreak
+   447                              <1> 
+   448                              <1> %%notNull:
+   449 000004BE 4D31E4              <1>  xor r12, r12
+   450 000004C1 30DB                <1>  xor bl, bl
+   451                              <1> 
+   452                              <1> %%whileBody:
+   453 000004C3 4983FC20            <1>  cmp r12, %1
+   454 000004C7 735A                <1>  jae %%whileBreak
+   455                              <1> 
+   456 000004C9 48D1C0              <1>  rol rax, %2
+   457 000004CC 89C1                <1>  mov ecx, eax
+   458 000004CE 83E101              <1>  and ecx, %3
+   459 000004D1 49FFC4              <1>  inc r12
+   460                              <1> 
+   461 000004D4 84DB                <1>  test bl, bl
+   462 000004D6 7506                <1>  jne %%printSymbol
+   463                              <1> 
+   464 000004D8 85C9                <1>  test ecx, ecx
+   465 000004DA 74E7                <1>  je %%whileBody
+   466                              <1> 
+   467 000004DC FEC3                <1>  inc bl
+   468                              <1> %%printSymbol:
+   469                              <1> 
+   470 000004DE 678A89[00000000]    <1>  mov cl, HexTable[ecx]
+   471                              <1>  WRITE_TO_BUF cl
+    75                              <2> 
+    76 000004E5 4983FD40            <2>  cmp r13, BufCapacity
+    77 000004E9 7229                <2>  jb %%noFlush
+    78                              <2> 
+    79                              <2>  FLUSH_BUFFER
+    34 000004EB 52                  <3>  push rdx
+    35                              <3> 
+    36                              <3>  SYS_WRITE Buffer, r13
+    13 000004EC B801000000          <4>  mov rax, 0x01
+    14 000004F1 BF01000000          <4>  mov rdi, 0x01
+    15 000004F6 48BE-               <4>  mov rsi, %1
+    15 000004F8 [1000000000000000]  <4>
+    16 00000500 4C89EA              <4>  mov rdx, %2
+    17 00000503 0F05                <4>  syscall
+    37                              <3> 
+    38                              <3> 
+    39 00000505 C70425[50000000]00- <3>  mov dword [BufferSize], 0
+    39 0000050D 000000              <3>
+    40 00000510 4D31ED              <3>  xor r13, r13
+    41                              <3> 
+    42 00000513 5A                  <3>  pop rdx
+    80                              <2> %%noFlush:
+    81                              <2> 
+    82 00000514 41888D[10000000]    <2>  mov byte [Buffer + r13], %1
+    83 0000051B 41FFC0              <2>  inc r8d
+    84 0000051E 49FFC5              <2>  inc r13
+   472                              <1> 
+   473 00000521 EBA0                <1>  jmp %%whileBody
+   474                              <1> %%whileBreak:
    475                              <1> 
-   476 0000052E C3                  <1>  ret
-   498                                  
-   499                                  ;-------------------------------------------------
-   500                                  ; printf octal
-   501                                  ;
-   502                                  ; Assumes:  rax (higher half) - number
-   503                                  ;           r10 - args stack ptr
-   504                                  ;           r13 - buffer size
-   505                                  ;           r8d - symbol counter
-   506                                  ;
-   507                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
-   508                                  ;-------------------------------------------------
-   509                                  printf_spec_octal:
-   510                                              WRITE_TO_BUF '0'
+   476                              <1>  INC_ARGS_PTRS
+   151                              <2> 
+   152 00000523 4939EA              <2>  cmp r10, rbp
+   153 00000526 7209                <2>  jb %%regsLeft
+   154 00000528 4939EE              <2>  cmp r14, rbp
+   155 0000052B 7204                <2>  jb %%regsLeft
+   156                              <2> 
+   157 0000052D 4983C608            <2>  add r14, 8
+   158                              <2> %%regsLeft:
+   159 00000531 4983C208            <2>  add r10, 8
+   477                              <1> 
+   478 00000535 C3                  <1>  ret
+   500                                  
+   501                                  ;-------------------------------------------------
+   502                                  ; printf octal
+   503                                  ;
+   504                                  ; Assumes:  rax (higher half) - number
+   505                                  ;           r10 - args stack ptr
+   506                                  ;           r13 - buffer size
+   507                                  ;           r8d - symbol counter
+   508                                  ;
+   509                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
+   510                                  ;-------------------------------------------------
+   511                                  printf_spec_octal:
+   512                                              WRITE_TO_BUF '0'
     75                              <1> 
-    76 0000052F 4983FD40            <1>  cmp r13, BufCapacity
-    77 00000533 7229                <1>  jb %%noFlush
+    76 00000536 4983FD40            <1>  cmp r13, BufCapacity
+    77 0000053A 7229                <1>  jb %%noFlush
     78                              <1> 
     79                              <1>  FLUSH_BUFFER
-    34 00000535 52                  <2>  push rdx
+    34 0000053C 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 00000536 B801000000          <3>  mov rax, 0x01
-    14 0000053B BF01000000          <3>  mov rdi, 0x01
-    15 00000540 48BE-               <3>  mov rsi, %1
-    15 00000542 [1000000000000000]  <3>
-    16 0000054A 4C89EA              <3>  mov rdx, %2
-    17 0000054D 0F05                <3>  syscall
+    13 0000053D B801000000          <3>  mov rax, 0x01
+    14 00000542 BF01000000          <3>  mov rdi, 0x01
+    15 00000547 48BE-               <3>  mov rsi, %1
+    15 00000549 [1000000000000000]  <3>
+    16 00000551 4C89EA              <3>  mov rdx, %2
+    17 00000554 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 0000054F C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 00000557 000000              <2>
-    40 0000055A 4D31ED              <2>  xor r13, r13
+    39 00000556 C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 0000055E 000000              <2>
+    40 00000561 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 0000055D 5A                  <2>  pop rdx
+    42 00000564 5A                  <2>  pop rdx
     80                              <1> %%noFlush:
     81                              <1> 
-    82 0000055E 41C685[10000000]30  <1>  mov byte [Buffer + r13], %1
-    83 00000566 41FFC0              <1>  inc r8d
-    84 00000569 49FFC5              <1>  inc r13
-   511                                  
-   512                                              CHECK_REG_STACK_ARGS_BORDER
+    82 00000565 41C685[10000000]30  <1>  mov byte [Buffer + r13], %1
+    83 0000056D 41FFC0              <1>  inc r8d
+    84 00000570 49FFC5              <1>  inc r13
+   513                                  
+   514                                              CHECK_REG_STACK_ARGS_BORDER
     92                              <1> 
-    93 0000056C 4D85FF              <1>  test r15, r15
-    94 0000056F 750B                <1>  jne %%Float
+    93 00000573 4D85FF              <1>  test r15, r15
+    94 00000576 750B                <1>  jne %%Float
     95                              <1> 
     96                              <1> 
-    97 00000571 4939EA              <1>  cmp r10, rbp
-    98 00000574 751D                <1>  jne %%Exit
-    99 00000576 4983C238            <1>  add r10, 16 + 8 * SavedArgs
+    97 00000578 4939EA              <1>  cmp r10, rbp
+    98 0000057B 751D                <1>  jne %%Exit
+    99 0000057D 4983C238            <1>  add r10, 16 + 8 * SavedArgs
    100                              <1> 
-   101 0000057A EB17                <1>  jmp %%Exit
+   101 00000581 EB17                <1>  jmp %%Exit
    102                              <1> %%Float:
-   103 0000057C 488D45C0            <1>  lea rax, [rbp - 64]
+   103 00000583 488D45C0            <1>  lea rax, [rbp - 64]
    104                              <1> 
-   105 00000580 4939C2              <1>  cmp r10, rax
-   106 00000583 750E                <1>  jne %%Exit
+   105 00000587 4939C2              <1>  cmp r10, rax
+   106 0000058A 750E                <1>  jne %%Exit
    107                              <1> 
-   108 00000585 4939EE              <1>  cmp r14, rbp
-   109 00000588 7205                <1>  jb %%XmmArgsExist
+   108 0000058C 4939EE              <1>  cmp r14, rbp
+   109 0000058F 7205                <1>  jb %%XmmArgsExist
    110                              <1> 
-   111 0000058A 4D89F2              <1>  mov r10, r14
-   112 0000058D EB04                <1>  jmp %%Exit
+   111 00000591 4D89F2              <1>  mov r10, r14
+   112 00000594 EB04                <1>  jmp %%Exit
    113                              <1> 
    114                              <1> %%XmmArgsExist:
-   115 0000058F 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
+   115 00000596 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
    116                              <1> 
    117                              <1> 
    118                              <1> %%Exit:
-   513 00000593 418B02                              mov eax, [r10]
-   514 00000596 48C1E01F                            shl rax, 31
-   515                                              PRINTF_SPEC_TEMPLATE 11, 3, 0b111
-   438                              <1> 
-   439 0000059A 4885C0              <1>  test rax, rax
-   440 0000059D 753F                <1>  jne %%notNull
-   441                              <1> 
-   442                              <1>  WRITE_TO_BUF '0'
-    75                              <2> 
-    76 0000059F 4983FD40            <2>  cmp r13, BufCapacity
-    77 000005A3 7229                <2>  jb %%noFlush
-    78                              <2> 
-    79                              <2>  FLUSH_BUFFER
-    34 000005A5 52                  <3>  push rdx
-    35                              <3> 
-    36                              <3>  SYS_WRITE Buffer, r13
-    13 000005A6 B801000000          <4>  mov rax, 0x01
-    14 000005AB BF01000000          <4>  mov rdi, 0x01
-    15 000005B0 48BE-               <4>  mov rsi, %1
-    15 000005B2 [1000000000000000]  <4>
-    16 000005BA 4C89EA              <4>  mov rdx, %2
-    17 000005BD 0F05                <4>  syscall
-    37                              <3> 
-    38                              <3> 
-    39 000005BF C70425[50000000]00- <3>  mov dword [BufferSize], 0
-    39 000005C7 000000              <3>
-    40 000005CA 4D31ED              <3>  xor r13, r13
-    41                              <3> 
-    42 000005CD 5A                  <3>  pop rdx
-    80                              <2> %%noFlush:
-    81                              <2> 
-    82 000005CE 41C685[10000000]30  <2>  mov byte [Buffer + r13], %1
-    83 000005D6 41FFC0              <2>  inc r8d
-    84 000005D9 49FFC5              <2>  inc r13
+   515 0000059A 418B02                              mov eax, [r10]
+   516 0000059D 48C1E01F                            shl rax, 31
+   517                                              PRINTF_SPEC_TEMPLATE 11, 3, 0b111
+   440                              <1> 
+   441 000005A1 4885C0              <1>  test rax, rax
+   442 000005A4 753F                <1>  jne %%notNull
    443                              <1> 
-   444 000005DC EB66                <1>  jmp %%whileBreak
-   445                              <1> 
-   446                              <1> %%notNull:
-   447 000005DE 4D31E4              <1>  xor r12, r12
-   448 000005E1 30DB                <1>  xor bl, bl
-   449                              <1> 
-   450                              <1> %%whileBody:
-   451 000005E3 4983FC0B            <1>  cmp r12, %1
-   452 000005E7 735B                <1>  jae %%whileBreak
-   453                              <1> 
-   454 000005E9 48C1C003            <1>  rol rax, %2
-   455 000005ED 89C1                <1>  mov ecx, eax
-   456 000005EF 83E107              <1>  and ecx, %3
-   457 000005F2 49FFC4              <1>  inc r12
-   458                              <1> 
-   459 000005F5 84DB                <1>  test bl, bl
-   460 000005F7 7506                <1>  jne %%printSymbol
-   461                              <1> 
-   462 000005F9 85C9                <1>  test ecx, ecx
-   463 000005FB 74E6                <1>  je %%whileBody
-   464                              <1> 
-   465 000005FD FEC3                <1>  inc bl
-   466                              <1> %%printSymbol:
-   467                              <1> 
-   468 000005FF 678A89[00000000]    <1>  mov cl, HexTable[ecx]
-   469                              <1>  WRITE_TO_BUF cl
+   444                              <1>  WRITE_TO_BUF '0'
     75                              <2> 
-    76 00000606 4983FD40            <2>  cmp r13, BufCapacity
-    77 0000060A 7229                <2>  jb %%noFlush
+    76 000005A6 4983FD40            <2>  cmp r13, BufCapacity
+    77 000005AA 7229                <2>  jb %%noFlush
     78                              <2> 
     79                              <2>  FLUSH_BUFFER
-    34 0000060C 52                  <3>  push rdx
+    34 000005AC 52                  <3>  push rdx
     35                              <3> 
     36                              <3>  SYS_WRITE Buffer, r13
-    13 0000060D B801000000          <4>  mov rax, 0x01
-    14 00000612 BF01000000          <4>  mov rdi, 0x01
-    15 00000617 48BE-               <4>  mov rsi, %1
-    15 00000619 [1000000000000000]  <4>
-    16 00000621 4C89EA              <4>  mov rdx, %2
-    17 00000624 0F05                <4>  syscall
+    13 000005AD B801000000          <4>  mov rax, 0x01
+    14 000005B2 BF01000000          <4>  mov rdi, 0x01
+    15 000005B7 48BE-               <4>  mov rsi, %1
+    15 000005B9 [1000000000000000]  <4>
+    16 000005C1 4C89EA              <4>  mov rdx, %2
+    17 000005C4 0F05                <4>  syscall
     37                              <3> 
     38                              <3> 
-    39 00000626 C70425[50000000]00- <3>  mov dword [BufferSize], 0
-    39 0000062E 000000              <3>
-    40 00000631 4D31ED              <3>  xor r13, r13
+    39 000005C6 C70425[50000000]00- <3>  mov dword [BufferSize], 0
+    39 000005CE 000000              <3>
+    40 000005D1 4D31ED              <3>  xor r13, r13
     41                              <3> 
-    42 00000634 5A                  <3>  pop rdx
+    42 000005D4 5A                  <3>  pop rdx
     80                              <2> %%noFlush:
     81                              <2> 
-    82 00000635 41888D[10000000]    <2>  mov byte [Buffer + r13], %1
-    83 0000063C 41FFC0              <2>  inc r8d
-    84 0000063F 49FFC5              <2>  inc r13
-   470                              <1> 
-   471 00000642 EB9F                <1>  jmp %%whileBody
-   472                              <1> %%whileBreak:
-   473                              <1> 
-   474                              <1>  INC_ARGS_PTRS
-   151                              <2> 
-   152 00000644 4939EA              <2>  cmp r10, rbp
-   153 00000647 7209                <2>  jb %%regsLeft
-   154 00000649 4939EE              <2>  cmp r14, rbp
-   155 0000064C 7204                <2>  jb %%regsLeft
-   156                              <2> 
-   157 0000064E 4983C608            <2>  add r14, 8
-   158                              <2> %%regsLeft:
-   159 00000652 4983C208            <2>  add r10, 8
+    82 000005D5 41C685[10000000]30  <2>  mov byte [Buffer + r13], %1
+    83 000005DD 41FFC0              <2>  inc r8d
+    84 000005E0 49FFC5              <2>  inc r13
+   445                              <1> 
+   446 000005E3 EB66                <1>  jmp %%whileBreak
+   447                              <1> 
+   448                              <1> %%notNull:
+   449 000005E5 4D31E4              <1>  xor r12, r12
+   450 000005E8 30DB                <1>  xor bl, bl
+   451                              <1> 
+   452                              <1> %%whileBody:
+   453 000005EA 4983FC0B            <1>  cmp r12, %1
+   454 000005EE 735B                <1>  jae %%whileBreak
+   455                              <1> 
+   456 000005F0 48C1C003            <1>  rol rax, %2
+   457 000005F4 89C1                <1>  mov ecx, eax
+   458 000005F6 83E107              <1>  and ecx, %3
+   459 000005F9 49FFC4              <1>  inc r12
+   460                              <1> 
+   461 000005FC 84DB                <1>  test bl, bl
+   462 000005FE 7506                <1>  jne %%printSymbol
+   463                              <1> 
+   464 00000600 85C9                <1>  test ecx, ecx
+   465 00000602 74E6                <1>  je %%whileBody
+   466                              <1> 
+   467 00000604 FEC3                <1>  inc bl
+   468                              <1> %%printSymbol:
+   469                              <1> 
+   470 00000606 678A89[00000000]    <1>  mov cl, HexTable[ecx]
+   471                              <1>  WRITE_TO_BUF cl
+    75                              <2> 
+    76 0000060D 4983FD40            <2>  cmp r13, BufCapacity
+    77 00000611 7229                <2>  jb %%noFlush
+    78                              <2> 
+    79                              <2>  FLUSH_BUFFER
+    34 00000613 52                  <3>  push rdx
+    35                              <3> 
+    36                              <3>  SYS_WRITE Buffer, r13
+    13 00000614 B801000000          <4>  mov rax, 0x01
+    14 00000619 BF01000000          <4>  mov rdi, 0x01
+    15 0000061E 48BE-               <4>  mov rsi, %1
+    15 00000620 [1000000000000000]  <4>
+    16 00000628 4C89EA              <4>  mov rdx, %2
+    17 0000062B 0F05                <4>  syscall
+    37                              <3> 
+    38                              <3> 
+    39 0000062D C70425[50000000]00- <3>  mov dword [BufferSize], 0
+    39 00000635 000000              <3>
+    40 00000638 4D31ED              <3>  xor r13, r13
+    41                              <3> 
+    42 0000063B 5A                  <3>  pop rdx
+    80                              <2> %%noFlush:
+    81                              <2> 
+    82 0000063C 41888D[10000000]    <2>  mov byte [Buffer + r13], %1
+    83 00000643 41FFC0              <2>  inc r8d
+    84 00000646 49FFC5              <2>  inc r13
+   472                              <1> 
+   473 00000649 EB9F                <1>  jmp %%whileBody
+   474                              <1> %%whileBreak:
    475                              <1> 
-   476 00000656 C3                  <1>  ret
-   516                                  
-   517                                  ;-------------------------------------------------
-   518                                  ; printf hex
-   519                                  ;
-   520                                  ; Assumes:  rax (higher half) - number
-   521                                  ;           r10 - args stack ptr
-   522                                  ;           r13 - buffer size
-   523                                  ;           r8d - symbol counter
-   524                                  ;
-   525                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
-   526                                  ;-------------------------------------------------
-   527                                  printf_spec_hex:
-   528                                              WRITE_TO_BUF '0'
+   476                              <1>  INC_ARGS_PTRS
+   151                              <2> 
+   152 0000064B 4939EA              <2>  cmp r10, rbp
+   153 0000064E 7209                <2>  jb %%regsLeft
+   154 00000650 4939EE              <2>  cmp r14, rbp
+   155 00000653 7204                <2>  jb %%regsLeft
+   156                              <2> 
+   157 00000655 4983C608            <2>  add r14, 8
+   158                              <2> %%regsLeft:
+   159 00000659 4983C208            <2>  add r10, 8
+   477                              <1> 
+   478 0000065D C3                  <1>  ret
+   518                                  
+   519                                  ;-------------------------------------------------
+   520                                  ; printf hex
+   521                                  ;
+   522                                  ; Assumes:  rax (higher half) - number
+   523                                  ;           r10 - args stack ptr
+   524                                  ;           r13 - buffer size
+   525                                  ;           r8d - symbol counter
+   526                                  ;
+   527                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12
+   528                                  ;-------------------------------------------------
+   529                                  printf_spec_hex:
+   530                                              WRITE_TO_BUF '0'
     75                              <1> 
-    76 00000657 4983FD40            <1>  cmp r13, BufCapacity
-    77 0000065B 7229                <1>  jb %%noFlush
+    76 0000065E 4983FD40            <1>  cmp r13, BufCapacity
+    77 00000662 7229                <1>  jb %%noFlush
     78                              <1> 
     79                              <1>  FLUSH_BUFFER
-    34 0000065D 52                  <2>  push rdx
+    34 00000664 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 0000065E B801000000          <3>  mov rax, 0x01
-    14 00000663 BF01000000          <3>  mov rdi, 0x01
-    15 00000668 48BE-               <3>  mov rsi, %1
-    15 0000066A [1000000000000000]  <3>
-    16 00000672 4C89EA              <3>  mov rdx, %2
-    17 00000675 0F05                <3>  syscall
+    13 00000665 B801000000          <3>  mov rax, 0x01
+    14 0000066A BF01000000          <3>  mov rdi, 0x01
+    15 0000066F 48BE-               <3>  mov rsi, %1
+    15 00000671 [1000000000000000]  <3>
+    16 00000679 4C89EA              <3>  mov rdx, %2
+    17 0000067C 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 00000677 C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 0000067F 000000              <2>
-    40 00000682 4D31ED              <2>  xor r13, r13
+    39 0000067E C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 00000686 000000              <2>
+    40 00000689 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 00000685 5A                  <2>  pop rdx
+    42 0000068C 5A                  <2>  pop rdx
     80                              <1> %%noFlush:
     81                              <1> 
-    82 00000686 41C685[10000000]30  <1>  mov byte [Buffer + r13], %1
-    83 0000068E 41FFC0              <1>  inc r8d
-    84 00000691 49FFC5              <1>  inc r13
-   529                                              WRITE_TO_BUF 'x'
+    82 0000068D 41C685[10000000]30  <1>  mov byte [Buffer + r13], %1
+    83 00000695 41FFC0              <1>  inc r8d
+    84 00000698 49FFC5              <1>  inc r13
+   531                                              WRITE_TO_BUF 'x'
     75                              <1> 
-    76 00000694 4983FD40            <1>  cmp r13, BufCapacity
-    77 00000698 7229                <1>  jb %%noFlush
+    76 0000069B 4983FD40            <1>  cmp r13, BufCapacity
+    77 0000069F 7229                <1>  jb %%noFlush
     78                              <1> 
     79                              <1>  FLUSH_BUFFER
-    34 0000069A 52                  <2>  push rdx
+    34 000006A1 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 0000069B B801000000          <3>  mov rax, 0x01
-    14 000006A0 BF01000000          <3>  mov rdi, 0x01
-    15 000006A5 48BE-               <3>  mov rsi, %1
-    15 000006A7 [1000000000000000]  <3>
-    16 000006AF 4C89EA              <3>  mov rdx, %2
-    17 000006B2 0F05                <3>  syscall
+    13 000006A2 B801000000          <3>  mov rax, 0x01
+    14 000006A7 BF01000000          <3>  mov rdi, 0x01
+    15 000006AC 48BE-               <3>  mov rsi, %1
+    15 000006AE [1000000000000000]  <3>
+    16 000006B6 4C89EA              <3>  mov rdx, %2
+    17 000006B9 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 000006B4 C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 000006BC 000000              <2>
-    40 000006BF 4D31ED              <2>  xor r13, r13
+    39 000006BB C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 000006C3 000000              <2>
+    40 000006C6 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 000006C2 5A                  <2>  pop rdx
+    42 000006C9 5A                  <2>  pop rdx
     80                              <1> %%noFlush:
     81                              <1> 
-    82 000006C3 41C685[10000000]78  <1>  mov byte [Buffer + r13], %1
-    83 000006CB 41FFC0              <1>  inc r8d
-    84 000006CE 49FFC5              <1>  inc r13
-   530                                  
-   531                                              CHECK_REG_STACK_ARGS_BORDER
+    82 000006CA 41C685[10000000]78  <1>  mov byte [Buffer + r13], %1
+    83 000006D2 41FFC0              <1>  inc r8d
+    84 000006D5 49FFC5              <1>  inc r13
+   532                                  
+   533                                              CHECK_REG_STACK_ARGS_BORDER
     92                              <1> 
-    93 000006D1 4D85FF              <1>  test r15, r15
-    94 000006D4 750B                <1>  jne %%Float
+    93 000006D8 4D85FF              <1>  test r15, r15
+    94 000006DB 750B                <1>  jne %%Float
     95                              <1> 
     96                              <1> 
-    97 000006D6 4939EA              <1>  cmp r10, rbp
-    98 000006D9 751D                <1>  jne %%Exit
-    99 000006DB 4983C238            <1>  add r10, 16 + 8 * SavedArgs
+    97 000006DD 4939EA              <1>  cmp r10, rbp
+    98 000006E0 751D                <1>  jne %%Exit
+    99 000006E2 4983C238            <1>  add r10, 16 + 8 * SavedArgs
    100                              <1> 
-   101 000006DF EB17                <1>  jmp %%Exit
+   101 000006E6 EB17                <1>  jmp %%Exit
    102                              <1> %%Float:
-   103 000006E1 488D45C0            <1>  lea rax, [rbp - 64]
+   103 000006E8 488D45C0            <1>  lea rax, [rbp - 64]
    104                              <1> 
-   105 000006E5 4939C2              <1>  cmp r10, rax
-   106 000006E8 750E                <1>  jne %%Exit
+   105 000006EC 4939C2              <1>  cmp r10, rax
+   106 000006EF 750E                <1>  jne %%Exit
    107                              <1> 
-   108 000006EA 4939EE              <1>  cmp r14, rbp
-   109 000006ED 7205                <1>  jb %%XmmArgsExist
+   108 000006F1 4939EE              <1>  cmp r14, rbp
+   109 000006F4 7205                <1>  jb %%XmmArgsExist
    110                              <1> 
-   111 000006EF 4D89F2              <1>  mov r10, r14
-   112 000006F2 EB04                <1>  jmp %%Exit
+   111 000006F6 4D89F2              <1>  mov r10, r14
+   112 000006F9 EB04                <1>  jmp %%Exit
    113                              <1> 
    114                              <1> %%XmmArgsExist:
-   115 000006F4 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
+   115 000006FB 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
    116                              <1> 
    117                              <1> 
    118                              <1> %%Exit:
-   532 000006F8 418B02                              mov eax, [r10]
-   533 000006FB 48C1E020                            shl rax, 32
-   534                                              PRINTF_SPEC_TEMPLATE 8, 4, 0b1111
-   438                              <1> 
-   439 000006FF 4885C0              <1>  test rax, rax
-   440 00000702 753F                <1>  jne %%notNull
-   441                              <1> 
-   442                              <1>  WRITE_TO_BUF '0'
-    75                              <2> 
-    76 00000704 4983FD40            <2>  cmp r13, BufCapacity
-    77 00000708 7229                <2>  jb %%noFlush
-    78                              <2> 
-    79                              <2>  FLUSH_BUFFER
-    34 0000070A 52                  <3>  push rdx
-    35                              <3> 
-    36                              <3>  SYS_WRITE Buffer, r13
-    13 0000070B B801000000          <4>  mov rax, 0x01
-    14 00000710 BF01000000          <4>  mov rdi, 0x01
-    15 00000715 48BE-               <4>  mov rsi, %1
-    15 00000717 [1000000000000000]  <4>
-    16 0000071F 4C89EA              <4>  mov rdx, %2
-    17 00000722 0F05                <4>  syscall
-    37                              <3> 
-    38                              <3> 
-    39 00000724 C70425[50000000]00- <3>  mov dword [BufferSize], 0
-    39 0000072C 000000              <3>
-    40 0000072F 4D31ED              <3>  xor r13, r13
-    41                              <3> 
-    42 00000732 5A                  <3>  pop rdx
-    80                              <2> %%noFlush:
-    81                              <2> 
-    82 00000733 41C685[10000000]30  <2>  mov byte [Buffer + r13], %1
-    83 0000073B 41FFC0              <2>  inc r8d
-    84 0000073E 49FFC5              <2>  inc r13
+   534 000006FF 418B02                              mov eax, [r10]
+   535 00000702 48C1E020                            shl rax, 32
+   536                                              PRINTF_SPEC_TEMPLATE 8, 4, 0b1111
+   440                              <1> 
+   441 00000706 4885C0              <1>  test rax, rax
+   442 00000709 753F                <1>  jne %%notNull
    443                              <1> 
-   444 00000741 EB66                <1>  jmp %%whileBreak
-   445                              <1> 
-   446                              <1> %%notNull:
-   447 00000743 4D31E4              <1>  xor r12, r12
-   448 00000746 30DB                <1>  xor bl, bl
-   449                              <1> 
-   450                              <1> %%whileBody:
-   451 00000748 4983FC08            <1>  cmp r12, %1
-   452 0000074C 735B                <1>  jae %%whileBreak
-   453                              <1> 
-   454 0000074E 48C1C004            <1>  rol rax, %2
-   455 00000752 89C1                <1>  mov ecx, eax
-   456 00000754 83E10F              <1>  and ecx, %3
-   457 00000757 49FFC4              <1>  inc r12
-   458                              <1> 
-   459 0000075A 84DB                <1>  test bl, bl
-   460 0000075C 7506                <1>  jne %%printSymbol
-   461                              <1> 
-   462 0000075E 85C9                <1>  test ecx, ecx
-   463 00000760 74E6                <1>  je %%whileBody
-   464                              <1> 
-   465 00000762 FEC3                <1>  inc bl
-   466                              <1> %%printSymbol:
-   467                              <1> 
-   468 00000764 678A89[00000000]    <1>  mov cl, HexTable[ecx]
-   469                              <1>  WRITE_TO_BUF cl
+   444                              <1>  WRITE_TO_BUF '0'
     75                              <2> 
-    76 0000076B 4983FD40            <2>  cmp r13, BufCapacity
-    77 0000076F 7229                <2>  jb %%noFlush
+    76 0000070B 4983FD40            <2>  cmp r13, BufCapacity
+    77 0000070F 7229                <2>  jb %%noFlush
     78                              <2> 
     79                              <2>  FLUSH_BUFFER
-    34 00000771 52                  <3>  push rdx
+    34 00000711 52                  <3>  push rdx
     35                              <3> 
     36                              <3>  SYS_WRITE Buffer, r13
-    13 00000772 B801000000          <4>  mov rax, 0x01
-    14 00000777 BF01000000          <4>  mov rdi, 0x01
-    15 0000077C 48BE-               <4>  mov rsi, %1
-    15 0000077E [1000000000000000]  <4>
-    16 00000786 4C89EA              <4>  mov rdx, %2
-    17 00000789 0F05                <4>  syscall
+    13 00000712 B801000000          <4>  mov rax, 0x01
+    14 00000717 BF01000000          <4>  mov rdi, 0x01
+    15 0000071C 48BE-               <4>  mov rsi, %1
+    15 0000071E [1000000000000000]  <4>
+    16 00000726 4C89EA              <4>  mov rdx, %2
+    17 00000729 0F05                <4>  syscall
     37                              <3> 
     38                              <3> 
-    39 0000078B C70425[50000000]00- <3>  mov dword [BufferSize], 0
-    39 00000793 000000              <3>
-    40 00000796 4D31ED              <3>  xor r13, r13
+    39 0000072B C70425[50000000]00- <3>  mov dword [BufferSize], 0
+    39 00000733 000000              <3>
+    40 00000736 4D31ED              <3>  xor r13, r13
     41                              <3> 
-    42 00000799 5A                  <3>  pop rdx
+    42 00000739 5A                  <3>  pop rdx
     80                              <2> %%noFlush:
     81                              <2> 
-    82 0000079A 41888D[10000000]    <2>  mov byte [Buffer + r13], %1
-    83 000007A1 41FFC0              <2>  inc r8d
-    84 000007A4 49FFC5              <2>  inc r13
-   470                              <1> 
-   471 000007A7 EB9F                <1>  jmp %%whileBody
-   472                              <1> %%whileBreak:
-   473                              <1> 
-   474                              <1>  INC_ARGS_PTRS
-   151                              <2> 
-   152 000007A9 4939EA              <2>  cmp r10, rbp
-   153 000007AC 7209                <2>  jb %%regsLeft
-   154 000007AE 4939EE              <2>  cmp r14, rbp
-   155 000007B1 7204                <2>  jb %%regsLeft
-   156                              <2> 
-   157 000007B3 4983C608            <2>  add r14, 8
-   158                              <2> %%regsLeft:
-   159 000007B7 4983C208            <2>  add r10, 8
+    82 0000073A 41C685[10000000]30  <2>  mov byte [Buffer + r13], %1
+    83 00000742 41FFC0              <2>  inc r8d
+    84 00000745 49FFC5              <2>  inc r13
+   445                              <1> 
+   446 00000748 EB66                <1>  jmp %%whileBreak
+   447                              <1> 
+   448                              <1> %%notNull:
+   449 0000074A 4D31E4              <1>  xor r12, r12
+   450 0000074D 30DB                <1>  xor bl, bl
+   451                              <1> 
+   452                              <1> %%whileBody:
+   453 0000074F 4983FC08            <1>  cmp r12, %1
+   454 00000753 735B                <1>  jae %%whileBreak
+   455                              <1> 
+   456 00000755 48C1C004            <1>  rol rax, %2
+   457 00000759 89C1                <1>  mov ecx, eax
+   458 0000075B 83E10F              <1>  and ecx, %3
+   459 0000075E 49FFC4              <1>  inc r12
+   460                              <1> 
+   461 00000761 84DB                <1>  test bl, bl
+   462 00000763 7506                <1>  jne %%printSymbol
+   463                              <1> 
+   464 00000765 85C9                <1>  test ecx, ecx
+   465 00000767 74E6                <1>  je %%whileBody
+   466                              <1> 
+   467 00000769 FEC3                <1>  inc bl
+   468                              <1> %%printSymbol:
+   469                              <1> 
+   470 0000076B 678A89[00000000]    <1>  mov cl, HexTable[ecx]
+   471                              <1>  WRITE_TO_BUF cl
+    75                              <2> 
+    76 00000772 4983FD40            <2>  cmp r13, BufCapacity
+    77 00000776 7229                <2>  jb %%noFlush
+    78                              <2> 
+    79                              <2>  FLUSH_BUFFER
+    34 00000778 52                  <3>  push rdx
+    35                              <3> 
+    36                              <3>  SYS_WRITE Buffer, r13
+    13 00000779 B801000000          <4>  mov rax, 0x01
+    14 0000077E BF01000000          <4>  mov rdi, 0x01
+    15 00000783 48BE-               <4>  mov rsi, %1
+    15 00000785 [1000000000000000]  <4>
+    16 0000078D 4C89EA              <4>  mov rdx, %2
+    17 00000790 0F05                <4>  syscall
+    37                              <3> 
+    38                              <3> 
+    39 00000792 C70425[50000000]00- <3>  mov dword [BufferSize], 0
+    39 0000079A 000000              <3>
+    40 0000079D 4D31ED              <3>  xor r13, r13
+    41                              <3> 
+    42 000007A0 5A                  <3>  pop rdx
+    80                              <2> %%noFlush:
+    81                              <2> 
+    82 000007A1 41888D[10000000]    <2>  mov byte [Buffer + r13], %1
+    83 000007A8 41FFC0              <2>  inc r8d
+    84 000007AB 49FFC5              <2>  inc r13
+   472                              <1> 
+   473 000007AE EB9F                <1>  jmp %%whileBody
+   474                              <1> %%whileBreak:
    475                              <1> 
-   476 000007BB C3                  <1>  ret
-   535                                  
-   536                                  ;-------------------------------------------------
-   537                                  ; printf float
-   538                                  ;
-   539                                  ; Assumes:  rax (higher half) - number
-   540                                  ;           r10 - args stack ptr
-   541                                  ;           r13 - buffer size
-   542                                  ;           r8d - symbol counter
-   543                                  ;
-   544                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12, xmm0, xmm1
-   545                                  ;-------------------------------------------------
-   546                                  printf_spec_float:
-   547                                  
-   548                                              CHECK_REG_STACK_FLOAT_ARGS_BORDER
+   476                              <1>  INC_ARGS_PTRS
+   151                              <2> 
+   152 000007B0 4939EA              <2>  cmp r10, rbp
+   153 000007B3 7209                <2>  jb %%regsLeft
+   154 000007B5 4939EE              <2>  cmp r14, rbp
+   155 000007B8 7204                <2>  jb %%regsLeft
+   156                              <2> 
+   157 000007BA 4983C608            <2>  add r14, 8
+   158                              <2> %%regsLeft:
+   159 000007BE 4983C208            <2>  add r10, 8
+   477                              <1> 
+   478 000007C2 C3                  <1>  ret
+   537                                  
+   538                                  ;-------------------------------------------------
+   539                                  ; printf float
+   540                                  ;
+   541                                  ; Assumes:  rax (higher half) - number
+   542                                  ;           r10 - args stack ptr
+   543                                  ;           r13 - buffer size
+   544                                  ;           r8d - symbol counter
+   545                                  ;
+   546                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11, r12, xmm0, xmm1
+   547                                  ;-------------------------------------------------
+   548                                  printf_spec_float:
+   549                                  
+   550                                              CHECK_REG_STACK_FLOAT_ARGS_BORDER
    126                              <1> 
-   127 000007BC 49F7DF              <1>  neg r15
-   128 000007BF 4A8D44FD00          <1>  lea rax, [rbp + 8 * r15]
-   129 000007C4 49F7DF              <1>  neg r15
+   127 000007C3 49F7DF              <1>  neg r15
+   128 000007C6 4A8D44FD00          <1>  lea rax, [rbp + 8 * r15]
+   129 000007CB 49F7DF              <1>  neg r15
    130                              <1> 
-   131 000007C7 4939C6              <1>  cmp r14, rax
-   132 000007CA 730E                <1>  jae %%NotXmmArgsExist
+   131 000007CE 4939C6              <1>  cmp r14, rax
+   132 000007D1 730E                <1>  jae %%NotXmmArgsExist
    133                              <1> 
-   134 000007CC 4939EA              <1>  cmp r10, rbp
-   135 000007CF 7306                <1>  jae %%NotRegsArgsExist
+   134 000007D3 4939EA              <1>  cmp r10, rbp
+   135 000007D6 7306                <1>  jae %%NotRegsArgsExist
    136                              <1> 
-   137 000007D1 4C8D7538            <1>  lea r14, [rbp + 16 + 8 * SavedArgs]
+   137 000007D8 4C8D7538            <1>  lea r14, [rbp + 16 + 8 * SavedArgs]
    138                              <1> 
-   139 000007D5 EB03                <1>  jmp %%NotXmmArgsExist
+   139 000007DC EB03                <1>  jmp %%NotXmmArgsExist
    140                              <1> %%NotRegsArgsExist:
-   141 000007D7 4D89D6              <1>  mov r14, r10
+   141 000007DE 4D89D6              <1>  mov r14, r10
    142                              <1> 
    143                              <1> %%NotXmmArgsExist:
-   549                                  
-   550 000007DA F3410F7E06                          movq xmm0, [r14]                            ; xmm0 - double
    551                                  
-   552                                              FLUSH_IF_NEEDED
+   552 000007E1 F3410F7E06                          movq xmm0, [r14]                            ; xmm0 - double
+   553                                  
+   554                                              FLUSH_IF_NEEDED
     54                              <1> 
-    55 000007DF 4D85ED              <1>  test r13, r13
-    56 000007E2 7429                <1>  je %%isEmptyBuf
+    55 000007E6 4D85ED              <1>  test r13, r13
+    56 000007E9 7429                <1>  je %%isEmptyBuf
     57                              <1> 
     58                              <1>  FLUSH_BUFFER
-    34 000007E4 52                  <2>  push rdx
+    34 000007EB 52                  <2>  push rdx
     35                              <2> 
     36                              <2>  SYS_WRITE Buffer, r13
-    13 000007E5 B801000000          <3>  mov rax, 0x01
-    14 000007EA BF01000000          <3>  mov rdi, 0x01
-    15 000007EF 48BE-               <3>  mov rsi, %1
-    15 000007F1 [1000000000000000]  <3>
-    16 000007F9 4C89EA              <3>  mov rdx, %2
-    17 000007FC 0F05                <3>  syscall
+    13 000007EC B801000000          <3>  mov rax, 0x01
+    14 000007F1 BF01000000          <3>  mov rdi, 0x01
+    15 000007F6 48BE-               <3>  mov rsi, %1
+    15 000007F8 [1000000000000000]  <3>
+    16 00000800 4C89EA              <3>  mov rdx, %2
+    17 00000803 0F05                <3>  syscall
     37                              <2> 
     38                              <2> 
-    39 000007FE C70425[50000000]00- <2>  mov dword [BufferSize], 0
-    39 00000806 000000              <2>
-    40 00000809 4D31ED              <2>  xor r13, r13
+    39 00000805 C70425[50000000]00- <2>  mov dword [BufferSize], 0
+    39 0000080D 000000              <2>
+    40 00000810 4D31ED              <2>  xor r13, r13
     41                              <2> 
-    42 0000080C 5A                  <2>  pop rdx
+    42 00000813 5A                  <2>  pop rdx
     59                              <1> %%isEmptyBuf:
     60                              <1> 
-   553                                  
-   554 0000080D 4C8D2C25[4F000000]                  lea r13, [Buffer + BufCapacity - 1]         ; r13 - output str pointer
    555                                  
-   556 00000815 66480F7EC3                          movq rbx, xmm0                              ; rbx - raw xmm0
-   557 0000081A 4885DB                              test rbx, rbx
-   558 0000081D 790C                                jns .isPositive ; xmm0 >= 0
-   559                                  
-   560 0000081F F30F7EC8                            movq xmm1, xmm0
-   561 00000823 660FEFC0                            pxor xmm0, xmm0
-   562 00000827 F20F5CC1                            subsd xmm0, xmm1
-   563                                  .isPositive:
-   564                                  
-   565 0000082B F24C0F2CD8                          cvttsd2si r11, xmm0 ; convert float to int  ; r11 - int part
-   566 00000830 F2490F2ACB                          cvtsi2sd xmm1, r11
-   567 00000835 F20F5CC1                            subsd xmm0, xmm1
-   568 00000839 F20F590425-                         mulsd xmm0, [double_1e6]
-   568 0000083E [27000000]         
-   569 00000842 F2480F2CC0                          cvttsd2si rax, xmm0                         ; rax - non-int part
-   570                                  
-   571                                              ; convert non-int part
-   572 00000847 41BC0A000000                        mov r12d, 10    ; base
-   573 0000084D B906000000                          mov rcx, 6      ; width
-   574                                  .flWhileBody:
-   575 00000852 4831D2                              xor rdx, rdx
-   576 00000855 41F7F4                              div r12d
-   577                                              ; eax = div
-   578                                              ; edx = mod
-   579                                  
-   580 00000858 8A92[00000000]                      mov dl, HexTable[rdx]
-   581 0000085E 41885500                            mov byte [r13], dl
-   582 00000862 49FFCD                              dec r13
-   583 00000865 48FFC9                              dec rcx
-   584                                  
-   585 00000868 4885C9                              test rcx,rcx
-   586 0000086B 75E5                                jne .flWhileBody
-   587                                  
-   588 0000086D 41C645002E                          mov byte [r13], '.'
-   589 00000872 49FFCD                              dec r13
-   590                                  
-   591 00000875 4C89D8                              mov rax, r11                                ; rax - int part
+   556 00000814 4C8D2C25[4F000000]                  lea r13, [Buffer + BufCapacity - 1]         ; r13 - output str pointer
+   557                                  
+   558 0000081C 66480F7EC3                          movq rbx, xmm0                              ; rbx - raw xmm0
+   559 00000821 4885DB                              test rbx, rbx
+   560 00000824 790C                                jns .isPositive ; xmm0 >= 0
+   561                                  
+   562 00000826 F30F7EC8                            movq xmm1, xmm0
+   563 0000082A 660FEFC0                            pxor xmm0, xmm0
+   564 0000082E F20F5CC1                            subsd xmm0, xmm1
+   565                                  .isPositive:
+   566                                  
+   567 00000832 F24C0F2CD8                          cvttsd2si r11, xmm0 ; convert float to int  ; r11 - int part
+   568 00000837 F2490F2ACB                          cvtsi2sd xmm1, r11
+   569 0000083C F20F5CC1                            subsd xmm0, xmm1
+   570 00000840 F20F590425-                         mulsd xmm0, [double_1e6]
+   570 00000845 [27000000]         
+   571 00000849 F2480F2CC0                          cvttsd2si rax, xmm0                         ; rax - non-int part
+   572                                  
+   573                                              ; convert non-int part
+   574 0000084E 41BC0A000000                        mov r12d, 10    ; base
+   575 00000854 B906000000                          mov rcx, 6      ; width
+   576                                  .flWhileBody:
+   577 00000859 4831D2                              xor rdx, rdx
+   578 0000085C 41F7F4                              div r12d
+   579                                              ; eax = div
+   580                                              ; edx = mod
+   581                                  
+   582 0000085F 8A92[00000000]                      mov dl, HexTable[rdx]
+   583 00000865 41885500                            mov byte [r13], dl
+   584 00000869 49FFCD                              dec r13
+   585 0000086C 48FFC9                              dec rcx
+   586                                  
+   587 0000086F 4885C9                              test rcx,rcx
+   588 00000872 75E5                                jne .flWhileBody
+   589                                  
+   590 00000874 41C645002E                          mov byte [r13], '.'
+   591 00000879 49FFCD                              dec r13
    592                                  
-   593                                              ; convert int part
-   594                                  .intWhileBody:
-   595 00000878 4831D2                              xor rdx, rdx
-   596 0000087B 41F7F4                              div r12d
-   597                                              ; eax = div
-   598                                              ; edx = mod
-   599                                  
-   600 0000087E 8A92[00000000]                      mov dl, HexTable[rdx]
-   601 00000884 41885500                            mov byte [r13], dl
-   602 00000888 49FFCD                              dec r13
-   603                                  
-   604 0000088B 85C0                                test eax, eax
-   605 0000088D 75E9                                jne .intWhileBody
-   606                                  
-   607 0000088F 4885DB                              test rbx, rbx
-   608 00000892 7908                                jns .isPositive2 ; xmm0 >= 0
-   609                                  
-   610 00000894 41C645002D                          mov byte [r13], '-'
-   611 00000899 49FFCD                              dec r13
-   612                                  .isPositive2:
-   613                                  
-   614 0000089C 49BB-                               mov r11, Buffer + BufCapacity - 1
-   614 0000089E [4F00000000000000] 
-   615 000008A6 4D29EB                              sub r11, r13
-   616                                  
-   617 000008A9 4153                                push r11
-   618 000008AB 49FFC5                              inc r13
-   619                                  
-   620                                              SYS_WRITE r13, r11
-    13 000008AE B801000000          <1>  mov rax, 0x01
-    14 000008B3 BF01000000          <1>  mov rdi, 0x01
-    15 000008B8 4C89EE              <1>  mov rsi, %1
-    16 000008BB 4C89DA              <1>  mov rdx, %2
-    17 000008BE 0F05                <1>  syscall
+   593 0000087C 4C89D8                              mov rax, r11                                ; rax - int part
+   594                                  
+   595                                              ; convert int part
+   596                                  .intWhileBody:
+   597 0000087F 4831D2                              xor rdx, rdx
+   598 00000882 41F7F4                              div r12d
+   599                                              ; eax = div
+   600                                              ; edx = mod
+   601                                  
+   602 00000885 8A92[00000000]                      mov dl, HexTable[rdx]
+   603 0000088B 41885500                            mov byte [r13], dl
+   604 0000088F 49FFCD                              dec r13
+   605                                  
+   606 00000892 85C0                                test eax, eax
+   607 00000894 75E9                                jne .intWhileBody
+   608                                  
+   609 00000896 4885DB                              test rbx, rbx
+   610 00000899 7908                                jns .isPositive2 ; xmm0 >= 0
+   611                                  
+   612 0000089B 41C645002D                          mov byte [r13], '-'
+   613 000008A0 49FFCD                              dec r13
+   614                                  .isPositive2:
+   615                                  
+   616 000008A3 49BB-                               mov r11, Buffer + BufCapacity - 1
+   616 000008A5 [4F00000000000000] 
+   617 000008AD 4D29EB                              sub r11, r13
+   618                                  
+   619 000008B0 4153                                push r11
+   620 000008B2 49FFC5                              inc r13
    621                                  
-   622 000008C0 415B                                pop r11
-   623 000008C2 4D01D8                              add r8, r11
-   624 000008C5 4D31ED                              xor r13, r13 ; buffer is flushed
-   625                                  
-   626                                              ; stack pointers increment
-   627 000008C8 4939EE                              cmp r14, rbp
-   628 000008CB 720D                                jb .xmmArgs
-   629                                  
-   630 000008CD 4983C608                            add r14, 8
+   622                                              SYS_WRITE r13, r11
+    13 000008B5 B801000000          <1>  mov rax, 0x01
+    14 000008BA BF01000000          <1>  mov rdi, 0x01
+    15 000008BF 4C89EE              <1>  mov rsi, %1
+    16 000008C2 4C89DA              <1>  mov rdx, %2
+    17 000008C5 0F05                <1>  syscall
+   623                                  
+   624 000008C7 415B                                pop r11
+   625 000008C9 4D01D8                              add r8, r11
+   626 000008CC 4D31ED                              xor r13, r13 ; buffer is flushed
+   627                                  
+   628                                              ; stack pointers increment
+   629 000008CF 4939EE                              cmp r14, rbp
+   630 000008D2 720D                                jb .xmmArgs
    631                                  
-   632 000008D1 4939EA                              cmp r10, rbp
-   633 000008D4 7208                                jb .regsLeft
-   634                                  
-   635 000008D6 4983C208                            add r10, 8
+   632 000008D4 4983C608                            add r14, 8
+   633                                  
+   634 000008D8 4939EA                              cmp r10, rbp
+   635 000008DB 7208                                jb .regsLeft
    636                                  
-   637 000008DA 4983EE08                .xmmArgs:   sub r14, 8
+   637 000008DD 4983C208                            add r10, 8
    638                                  
-   639                                  .regsLeft:
-   640 000008DE C3                                  ret
-   641                                  ;-------------------------------------------------
-   642                                  
+   639 000008E1 4983EE08                .xmmArgs:   sub r14, 8
+   640                                  
+   641                                  .regsLeft:
+   642 000008E5 C3                                  ret
    643                                  ;-------------------------------------------------
-   644                                  ; Writes to buffer unsigned double from long with precision 10^6
-   645                                  ;
-   646                                  ; Args:     rax - number
+   644                                  
+   645                                  ;-------------------------------------------------
+   646                                  ; writes number of symbols pronted so far
    647                                  ;
-   648                                  ; Assumes:  r13 - dest pointer
-   649                                  ;           r8d - symbol counter
-   650                                  ;
-   651                                  ; Destr:    rax, rbx, rcx, rdx, rdi, rsi, r11
-   652                                  ;-------------------------------------------------
-   653                                  ConvertDecDouble:
-   654 000008DF 41BC0A000000                        mov r12d, 10 ; base
+   648                                  ; Args:     r10 - args stack ptr
+   649                                  ;           r13 - buffer size
+   650                                  ;           r8d - symbol counter
+   651                                  ;
+   652                                  ; Destr:    rax
+   653                                  ;-------------------------------------------------
+   654                                  printf_spec_n:
    655                                  
-   656 000008E5 BB06000000                          mov rbx, 6
+   656                                              CHECK_REG_STACK_ARGS_BORDER
+    92                              <1> 
+    93 000008E6 4D85FF              <1>  test r15, r15
+    94 000008E9 750B                <1>  jne %%Float
+    95                              <1> 
+    96                              <1> 
+    97 000008EB 4939EA              <1>  cmp r10, rbp
+    98 000008EE 751D                <1>  jne %%Exit
+    99 000008F0 4983C238            <1>  add r10, 16 + 8 * SavedArgs
+   100                              <1> 
+   101 000008F4 EB17                <1>  jmp %%Exit
+   102                              <1> %%Float:
+   103 000008F6 488D45C0            <1>  lea rax, [rbp - 64]
+   104                              <1> 
+   105 000008FA 4939C2              <1>  cmp r10, rax
+   106 000008FD 750E                <1>  jne %%Exit
+   107                              <1> 
+   108 000008FF 4939EE              <1>  cmp r14, rbp
+   109 00000902 7205                <1>  jb %%XmmArgsExist
+   110                              <1> 
+   111 00000904 4D89F2              <1>  mov r10, r14
+   112 00000907 EB04                <1>  jmp %%Exit
+   113                              <1> 
+   114                              <1> %%XmmArgsExist:
+   115 00000909 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
+   116                              <1> 
+   117                              <1> 
+   118                              <1> %%Exit:
    657                                  
-   658                                  .whileBody:
-   659 000008EA 4831D2                              xor rdx, rdx
-   660 000008ED 41F7F4                              div r12d
-   661                                              ; eax = div
-   662                                              ; edx = mod
+   658 0000090D 498B02                              mov rax, [r10]
+   659                                  
+   660 00000910 448900                              mov dword [rax], r8d
+   661                                  
+   662                                              INC_ARGS_PTRS
+   151                              <1> 
+   152 00000913 4939EA              <1>  cmp r10, rbp
+   153 00000916 7209                <1>  jb %%regsLeft
+   154 00000918 4939EE              <1>  cmp r14, rbp
+   155 0000091B 7204                <1>  jb %%regsLeft
+   156                              <1> 
+   157 0000091D 4983C608            <1>  add r14, 8
+   158                              <1> %%regsLeft:
+   159 00000921 4983C208            <1>  add r10, 8
    663                                  
-   664 000008F0 8A92[00000000]                      mov dl, HexTable[rdx]
-   665 000008F6 41885500                            mov byte [r13], dl
-   666 000008FA 49FFCD                              dec r13
-   667                                  
-   668 000008FD 48FFCB                              dec rbx
+   664 00000925 C3                                  ret
+   665                                  ;-------------------------------------------------
+   666                                  
+   667                                  ;+++++++++++++++++++++++++++++++++++++++++++++++++
+   668                                  segment .data
    669                                  
-   670 00000900 4885DB                              test rbx, rbx
-   671 00000903 7508                                jne .noDot
+   670                                  
+   671 00000000 303132333435363738-     HexTable:   db "0123456789abcdef"
+   671 00000009 39616263646566     
    672                                  
-   673 00000905 41C645002E                          mov byte [r13], '.'
-   674 0000090A 49FFCD                              dec r13
-   675                                  .noDot:
-   676                                  
-   677                                  .whileClause:
-   678 0000090D 85C0                                test eax, eax
-   679 0000090F 75D9                                jne .whileBody
+   673                                  BufCapacity equ 64
+   674                                  
+   675 00000010 00<rep 40h>             Buffer:     times BufCapacity db 0
+   676 00000050 00000000                BufferSize: dd 0
+   677                                  
+   678                                  ;+++++++++++++++++++++++++++++++++++++++++++++++++
+   679                                  segment .rodata
    680                                  
-   681 00000911 EB0B                                jmp .zeroWhileClause
-   682                                  .zeroWhileBody:
+   681 00000000 5072696E7466206572-     UnknownSpecErrorMsg:    db "Printf error. Unknown format specified", 0x0a
+   681 00000009 726F722E20556E6B6E-
+   681 00000012 6F776E20666F726D61-
+   681 0000001B 742073706563696669-
+   681 00000024 65640A             
+   682                                  UnknownSpecErrorMsgLen  equ $ - UnknownSpecErrorMsg
    683                                  
-   684 00000913 41C6450030                          mov byte [r13], '0'
-   685 00000918 49FFCD                              dec r13
+   684 00000027 0000000080842E41        double_1e6:  dq 0x412e848000000000
+   685                                  double_1     equ 0x3ff0000000000000
    686                                  
-   687 0000091B 48FFCB                              dec rbx
-   688                                  
-   689                                  .zeroWhileClause:
-   690 0000091E 4883FB00                            cmp rbx, 0
-   691 00000922 7FEF                                jg .zeroWhileBody
-   692                                  
-   693 00000924 4885DB                              test rbx, rbx
-   694 00000927 7510                                jne .noZero
-   695                                  
-   696 00000929 41C645002E                          mov byte [r13], '.'
-   697 0000092E 49FFCD                              dec r13
-   698 00000931 41C6450030                          mov byte [r13], '0'
-   699 00000936 49FFCD                              dec r13
-   700                                  .noZero:
-   701                                  
-   702 00000939 49BB-                               mov r11, Buffer + BufCapacity - 1
-   702 0000093B [4F00000000000000] 
-   703 00000943 4D29EB                              sub r11, r13
-   704 00000946 4153                                push r11
-   705                                  
-   706 00000948 49FFC5                              inc r13
-   707                                              SYS_WRITE r13, r11
-    13 0000094B B801000000          <1>  mov rax, 0x01
-    14 00000950 BF01000000          <1>  mov rdi, 0x01
-    15 00000955 4C89EE              <1>  mov rsi, %1
-    16 00000958 4C89DA              <1>  mov rdx, %2
-    17 0000095B 0F05                <1>  syscall
-   708                                  
-   709 0000095D 415B                                pop r11
-   710 0000095F 4D01D8                              add r8, r11
-   711                                  
-   712 00000962 C3                                  ret
-   713                                  ;-------------------------------------------------
-   714                                  
-   715                                  ;+++++++++++++++++++++++++++++++++++++++++++++++++
-   716                                  segment .data
-   717                                  
-   718                                  
-   719 00000000 303132333435363738-     HexTable:   db "0123456789abcdef"
-   719 00000009 39616263646566     
-   720                                  
-   721                                  BufCapacity equ 64
-   722                                  
-   723 00000010 00<rep 40h>             Buffer:     times BufCapacity db 0
-   724 00000050 00000000                BufferSize: dd 0
-   725                                  
-   726                                  ;+++++++++++++++++++++++++++++++++++++++++++++++++
-   727                                  segment .rodata
-   728                                  
-   729 00000000 5072696E7466206572-     UnknownSpecErrorMsg:    db "Printf error. Unknown format specified", 0x0a
-   729 00000009 726F722E20556E6B6E-
-   729 00000012 6F776E20666F726D61-
-   729 0000001B 742073706563696669-
-   729 00000024 65640A             
-   730                                  UnknownSpecErrorMsgLen  equ $ - UnknownSpecErrorMsg
-   731                                  
-   732 00000027 0000000080842E41        double_1e6:  dq 0x412e848000000000
-   733                                  double_1     equ 0x3ff0000000000000
-   734                                  
-   735                                  ; options in ASCII order: %, <large gap>, b,  c,  d,  f,  o,  s,  x
-   736                                  ;                         37              98  99 100 102 111 115 120
-   737                                  printf_jmp_table:
-   738 0000002F [E300000000000000]                  dq _Z8myprintfPKcz.spec_bin
-   739 00000037 [DC00000000000000]                  dq _Z8myprintfPKcz.spec_char
-   740 0000003F [F100000000000000]                  dq _Z8myprintfPKcz.spec_dec
-   741 00000047 [0D01000000000000]                  times ('f' - 'd' - 1) dq _Z8myprintfPKcz.spec_error
-   742 0000004F [0601000000000000]                  dq _Z8myprintfPKcz.spec_float
-   743 00000057 [0D01000000000000]-                 times ('o' - 'f' - 1) dq _Z8myprintfPKcz.spec_error
-   743 00000057 <rep 8h>           
-   744 00000097 [EA00000000000000]                  dq _Z8myprintfPKcz.spec_oct
-   745 0000009F [0D01000000000000]-                 times ('s' - 'o' - 1) dq _Z8myprintfPKcz.spec_error
-   745 0000009F <rep 3h>           
-   746 000000B7 [FF00000000000000]                  dq _Z8myprintfPKcz.spec_str
-   747 000000BF [0D01000000000000]-                 times ('x' - 's' - 1) dq _Z8myprintfPKcz.spec_error
-   747 000000BF <rep 4h>           
-   748 000000DF [F800000000000000]                  dq _Z8myprintfPKcz.spec_hex
-   749                                  
+   687                                  ; options in ASCII order: %, <large gap>, b,  c,  d,  f,  n,  o,  s,  x
+   688                                  ;                         37              98  99 100 102 110 111 115 120
+   689                                  printf_jmp_table:
+   690 0000002F [E300000000000000]                  dq _Z8myprintfPKcz.spec_bin
+   691 00000037 [DC00000000000000]                  dq _Z8myprintfPKcz.spec_char
+   692 0000003F [F100000000000000]                  dq _Z8myprintfPKcz.spec_dec
+   693 00000047 [1401000000000000]                  times ('f' - 'd' - 1) dq _Z8myprintfPKcz.spec_error
+   694 0000004F [0601000000000000]                  dq _Z8myprintfPKcz.spec_float
+   695 00000057 [1401000000000000]-                 times ('n' - 'f' - 1) dq _Z8myprintfPKcz.spec_error
+   695 00000057 <rep 7h>           
+   696 0000008F [0D01000000000000]                  dq _Z8myprintfPKcz.spec_n
+   697 00000097 [EA00000000000000]                  dq _Z8myprintfPKcz.spec_oct
+   698 0000009F [1401000000000000]-                 times ('s' - 'o' - 1) dq _Z8myprintfPKcz.spec_error
+   698 0000009F <rep 3h>           
+   699 000000B7 [FF00000000000000]                  dq _Z8myprintfPKcz.spec_str
+   700 000000BF [1401000000000000]-                 times ('x' - 's' - 1) dq _Z8myprintfPKcz.spec_error
+   700 000000BF <rep 4h>           
+   701 000000DF [F800000000000000]                  dq _Z8myprintfPKcz.spec_hex
+   702                                  
