@@ -78,7 +78,7 @@ abcdef
 
 Each program has it's own Makefile. Simply use `make` to build and run
 
-# Literature and tools
+# References and tools
 
 1. **Computer Systems: A Programmer's Perspective** 3rd Edition by **Randal Bryant**, **David O'Hallaron**
 2. **Compiler explorer** - [godbolt.com](https://godbolt.com)

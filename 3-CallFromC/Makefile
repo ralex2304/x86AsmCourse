@@ -12,7 +12,7 @@ build:
 	@g++ $(CFLAGS_SANITIZER) -o main.o -c main.cpp
 
 link:
-	@g++ $(CFLAGS_SANITIZER) -no-pie -o ./prog ./prog.o ./main.o
+	@g++ $(CFLAGS_SANITIZER) -o ./prog ./prog.o ./main.o
 
 run:
 	@./prog

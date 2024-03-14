@@ -5,15 +5,13 @@
      5                                  
      6 00000000 C8000000                main:       enter 0, 0
      7                                  
-     8 00000004 48BF-                               mov rdi, Str
-     8 00000006 [0000000000000000] 
-     9 0000000E 48BE-                               mov rsi, Meow
-     9 00000010 [1200000000000000] 
-    10 00000018 B800000000                          mov rax, 0
-    11 0000001D E8(00000000)                        call printf
+     8 00000004 488D3D(00000000)                    lea rdi, [rel Str]
+     9 0000000B 488D35(12000000)                    lea rsi, [rel Meow]
+    10 00000012 B800000000                          mov rax, 0
+    11 00000017 E8(00000000)                        call printf wrt ..plt
     12                                  
-    13 00000022 C9                                  leave
-    14 00000023 C3                                  ret
+    13 0000001C C9                                  leave
+    14 0000001D C3                                  ret
     15                                  
     16                                  section .data
     17                                  

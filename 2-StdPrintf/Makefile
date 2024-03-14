@@ -9,7 +9,7 @@ asm:
 	@nasm -f elf64 -l ./prog.lst ./prog.nasm -o prog.o
 
 link:
-	@g++ $(CFLAGS_SANITIZER) -no-pie -o ./prog ./prog.o
+	@g++ $(CFLAGS_SANITIZER) -o ./prog ./prog.o
 
 run:
 	@./prog

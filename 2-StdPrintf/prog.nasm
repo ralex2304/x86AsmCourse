@@ -5,10 +5,10 @@ extern printf
 
 main:       enter 0, 0
 
-            mov rdi, Str
-            mov rsi, Meow
+            lea rdi, [rel Str]
+            lea rsi, [rel Meow]
             mov rax, 0
-            call printf
+            call printf wrt ..plt
 
             leave
             ret
