@@ -10,7 +10,7 @@
     10                                  ;=================================================
     11                                  
     12                                  %macro SYS_WRITE 2
-    13                                              mov rax, 0x01   ; sys_wryte
+    13                                              mov rax, 0x01   ; sys_write
     14                                              mov rdi, 0x01   ; stdout
     15                                              mov rsi, %1     ; buffer
     16                                              mov rdx, %2     ; buffer size
@@ -129,18 +129,18 @@
    129                                              neg r15
    130                                  
    131                                              cmp r14, rax
-   132                                              jae %%NotXmmArgsExist
+   132                                              jae %%Exit
    133                                  
    134                                              cmp r10, rbp
    135                                              jae %%NotRegsArgsExist
    136                                  
    137                                              lea r14, [rbp + 16 + 8 * SavedArgs] ; ret + ret2 + SavedArgs
    138                                  
-   139                                              jmp %%NotXmmArgsExist
+   139                                              jmp %%Exit
    140                                  %%NotRegsArgsExist:
    141                                              mov r14, r10
    142                                  
-   143                                  %%NotXmmArgsExist:
+   143                                  %%Exit:
    144                                  %endmacro
    145                                  ;=================================================
    146                                  
@@ -208,7 +208,7 @@
    208 00000057 51                                  push rcx
    209 00000058 52                                  push rdx
    210 00000059 56                                  push rsi
-   211 0000005A 4989F9                              mov r9, rdi
+   211 0000005A 4989F9                              mov r9, rdi                 ; r9                - format string ptr
    212                                  
    213 0000005D 4989E2                              mov r10, rsp                ; r10 = rsp         - args stack ptr
    214                                  
@@ -217,7 +217,7 @@
    217 00000063 448B2C25[50000000]                  mov r13d, dword [BufferSize]; r13 = [BufSize]   - buffer size
    218 0000006B 418A19                              mov bl, [r9]                ; bl  = [r9]        - current fmt symbol
    219 0000006E 4D31C0                              xor r8, r8                  ; r8d = 0           - symbol counter
-   220                                                                          ; r9                - format string ptr
+   220                                  
    221 00000071 E907010000                          jmp .whileFmtEnter
    222                                  .whileFmtBody:
    223                                  
@@ -285,7 +285,7 @@
    259 00000104 EB33                                jmp .switch_end
    260 00000106 E8B8060000              .spec_float:call printf_spec_float
    261 0000010B EB2C                                jmp .switch_end
-   262 0000010D E8D4070000              .spec_n:    call printf_spec_n
+   262 0000010D E8D9070000              .spec_n:    call printf_spec_n
    263 00000112 EB25                                jmp .switch_end
    264                                  
    265                                  
@@ -1362,18 +1362,18 @@
    129 000007CB 49F7DF              <1>  neg r15
    130                              <1> 
    131 000007CE 4939C6              <1>  cmp r14, rax
-   132 000007D1 730E                <1>  jae %%NotXmmArgsExist
+   132 000007D1 730E                <1>  jae %%Exit
    133                              <1> 
    134 000007D3 4939EA              <1>  cmp r10, rbp
    135 000007D6 7306                <1>  jae %%NotRegsArgsExist
    136                              <1> 
    137 000007D8 4C8D7538            <1>  lea r14, [rbp + 16 + 8 * SavedArgs]
    138                              <1> 
-   139 000007DC EB03                <1>  jmp %%NotXmmArgsExist
+   139 000007DC EB03                <1>  jmp %%Exit
    140                              <1> %%NotRegsArgsExist:
    141 000007DE 4D89D6              <1>  mov r14, r10
    142                              <1> 
-   143                              <1> %%NotXmmArgsExist:
+   143                              <1> %%Exit:
    551                                  
    552 000007E1 F3410F7E06                          movq xmm0, [r14]                            ; xmm0 - double
    553                                  
@@ -1483,120 +1483,122 @@
    627                                  
    628                                              ; stack pointers increment
    629 000008CF 4939EE                              cmp r14, rbp
-   630 000008D2 720D                                jb .xmmArgs
+   630 000008D2 720F                                jb .xmmArgs
    631                                  
    632 000008D4 4983C608                            add r14, 8
    633                                  
    634 000008D8 4939EA                              cmp r10, rbp
-   635 000008DB 7208                                jb .regsLeft
+   635 000008DB 720A                                jb .regsLeft
    636                                  
    637 000008DD 4983C208                            add r10, 8
-   638                                  
-   639 000008E1 4983EE08                .xmmArgs:   sub r14, 8
-   640                                  
-   641                                  .regsLeft:
-   642 000008E5 C3                                  ret
-   643                                  ;-------------------------------------------------
-   644                                  
+   638 000008E1 EB04                                jmp .regsLeft
+   639                                  
+   640 000008E3 4983EE08                .xmmArgs:   sub r14, 8
+   641                                  
+   642                                  .regsLeft:
+   643 000008E7 4831DB                              xor rbx, rbx ; bl is used as rbx in main function
+   644 000008EA C3                                  ret
    645                                  ;-------------------------------------------------
-   646                                  ; writes number of symbols pronted so far
-   647                                  ;
-   648                                  ; Args:     r10 - args stack ptr
-   649                                  ;           r13 - buffer size
-   650                                  ;           r8d - symbol counter
-   651                                  ;
-   652                                  ; Destr:    rax
-   653                                  ;-------------------------------------------------
-   654                                  printf_spec_n:
-   655                                  
-   656                                              CHECK_REG_STACK_ARGS_BORDER
+   646                                  
+   647                                  ;-------------------------------------------------
+   648                                  ; writes number of symbols pronted so far
+   649                                  ;
+   650                                  ; Args:     r10 - args stack ptr
+   651                                  ;           r13 - buffer size
+   652                                  ;           r8d - symbol counter
+   653                                  ;
+   654                                  ; Destr:    rax
+   655                                  ;-------------------------------------------------
+   656                                  printf_spec_n:
+   657                                  
+   658                                              CHECK_REG_STACK_ARGS_BORDER
     92                              <1> 
-    93 000008E6 4D85FF              <1>  test r15, r15
-    94 000008E9 750B                <1>  jne %%Float
+    93 000008EB 4D85FF              <1>  test r15, r15
+    94 000008EE 750B                <1>  jne %%Float
     95                              <1> 
     96                              <1> 
-    97 000008EB 4939EA              <1>  cmp r10, rbp
-    98 000008EE 751D                <1>  jne %%Exit
-    99 000008F0 4983C238            <1>  add r10, 16 + 8 * SavedArgs
+    97 000008F0 4939EA              <1>  cmp r10, rbp
+    98 000008F3 751D                <1>  jne %%Exit
+    99 000008F5 4983C238            <1>  add r10, 16 + 8 * SavedArgs
    100                              <1> 
-   101 000008F4 EB17                <1>  jmp %%Exit
+   101 000008F9 EB17                <1>  jmp %%Exit
    102                              <1> %%Float:
-   103 000008F6 488D45C0            <1>  lea rax, [rbp - 64]
+   103 000008FB 488D45C0            <1>  lea rax, [rbp - 64]
    104                              <1> 
-   105 000008FA 4939C2              <1>  cmp r10, rax
-   106 000008FD 750E                <1>  jne %%Exit
+   105 000008FF 4939C2              <1>  cmp r10, rax
+   106 00000902 750E                <1>  jne %%Exit
    107                              <1> 
-   108 000008FF 4939EE              <1>  cmp r14, rbp
-   109 00000902 7205                <1>  jb %%XmmArgsExist
+   108 00000904 4939EE              <1>  cmp r14, rbp
+   109 00000907 7205                <1>  jb %%XmmArgsExist
    110                              <1> 
-   111 00000904 4D89F2              <1>  mov r10, r14
-   112 00000907 EB04                <1>  jmp %%Exit
+   111 00000909 4D89F2              <1>  mov r10, r14
+   112 0000090C EB04                <1>  jmp %%Exit
    113                              <1> 
    114                              <1> %%XmmArgsExist:
-   115 00000909 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
+   115 0000090E 4C8D5538            <1>  lea r10, [rbp + 16 + 8 * SavedArgs]
    116                              <1> 
    117                              <1> 
    118                              <1> %%Exit:
-   657                                  
-   658 0000090D 498B02                              mov rax, [r10]
    659                                  
-   660 00000910 448900                              mov dword [rax], r8d
+   660 00000912 498B02                              mov rax, [r10]
    661                                  
-   662                                              INC_ARGS_PTRS
-   151                              <1> 
-   152 00000913 4939EA              <1>  cmp r10, rbp
-   153 00000916 7209                <1>  jb %%regsLeft
-   154 00000918 4939EE              <1>  cmp r14, rbp
-   155 0000091B 7204                <1>  jb %%regsLeft
-   156                              <1> 
-   157 0000091D 4983C608            <1>  add r14, 8
-   158                              <1> %%regsLeft:
-   159 00000921 4983C208            <1>  add r10, 8
+   662 00000915 448900                              mov dword [rax], r8d
    663                                  
-   664 00000925 C3                                  ret
-   665                                  ;-------------------------------------------------
-   666                                  
-   667                                  ;+++++++++++++++++++++++++++++++++++++++++++++++++
-   668                                  segment .data
-   669                                  
-   670                                  
-   671 00000000 303132333435363738-     HexTable:   db "0123456789abcdef"
-   671 00000009 39616263646566     
+   664                                              INC_ARGS_PTRS
+   151                              <1> 
+   152 00000918 4939EA              <1>  cmp r10, rbp
+   153 0000091B 7209                <1>  jb %%regsLeft
+   154 0000091D 4939EE              <1>  cmp r14, rbp
+   155 00000920 7204                <1>  jb %%regsLeft
+   156                              <1> 
+   157 00000922 4983C608            <1>  add r14, 8
+   158                              <1> %%regsLeft:
+   159 00000926 4983C208            <1>  add r10, 8
+   665                                  
+   666 0000092A C3                                  ret
+   667                                  ;-------------------------------------------------
+   668                                  
+   669                                  ;+++++++++++++++++++++++++++++++++++++++++++++++++
+   670                                  segment .data
+   671                                  
    672                                  
-   673                                  BufCapacity equ 64
+   673 00000000 303132333435363738-     HexTable:   db "0123456789abcdef"
+   673 00000009 39616263646566     
    674                                  
-   675 00000010 00<rep 40h>             Buffer:     times BufCapacity db 0
-   676 00000050 00000000                BufferSize: dd 0
-   677                                  
-   678                                  ;+++++++++++++++++++++++++++++++++++++++++++++++++
-   679                                  segment .rodata
-   680                                  
-   681 00000000 5072696E7466206572-     UnknownSpecErrorMsg:    db "Printf error. Unknown format specified", 0x0a
-   681 00000009 726F722E20556E6B6E-
-   681 00000012 6F776E20666F726D61-
-   681 0000001B 742073706563696669-
-   681 00000024 65640A             
-   682                                  UnknownSpecErrorMsgLen  equ $ - UnknownSpecErrorMsg
-   683                                  
-   684 00000027 0000000080842E41        double_1e6:  dq 0x412e848000000000
-   685                                  double_1     equ 0x3ff0000000000000
-   686                                  
-   687                                  ; options in ASCII order: %, <large gap>, b,  c,  d,  f,  n,  o,  s,  x
-   688                                  ;                         37              98  99 100 102 110 111 115 120
-   689                                  printf_jmp_table:
-   690 0000002F [E300000000000000]                  dq _Z8myprintfPKcz.spec_bin
-   691 00000037 [DC00000000000000]                  dq _Z8myprintfPKcz.spec_char
-   692 0000003F [F100000000000000]                  dq _Z8myprintfPKcz.spec_dec
-   693 00000047 [1401000000000000]                  times ('f' - 'd' - 1) dq _Z8myprintfPKcz.spec_error
-   694 0000004F [0601000000000000]                  dq _Z8myprintfPKcz.spec_float
-   695 00000057 [1401000000000000]-                 times ('n' - 'f' - 1) dq _Z8myprintfPKcz.spec_error
-   695 00000057 <rep 7h>           
-   696 0000008F [0D01000000000000]                  dq _Z8myprintfPKcz.spec_n
-   697 00000097 [EA00000000000000]                  dq _Z8myprintfPKcz.spec_oct
-   698 0000009F [1401000000000000]-                 times ('s' - 'o' - 1) dq _Z8myprintfPKcz.spec_error
-   698 0000009F <rep 3h>           
-   699 000000B7 [FF00000000000000]                  dq _Z8myprintfPKcz.spec_str
-   700 000000BF [1401000000000000]-                 times ('x' - 's' - 1) dq _Z8myprintfPKcz.spec_error
-   700 000000BF <rep 4h>           
-   701 000000DF [F800000000000000]                  dq _Z8myprintfPKcz.spec_hex
-   702                                  
+   675                                  BufCapacity equ 64
+   676                                  
+   677 00000010 00<rep 40h>             Buffer:     times BufCapacity db 0
+   678 00000050 00000000                BufferSize: dd 0
+   679                                  
+   680                                  ;+++++++++++++++++++++++++++++++++++++++++++++++++
+   681                                  segment .rodata
+   682                                  
+   683 00000000 5072696E7466206572-     UnknownSpecErrorMsg:    db "Printf error. Unknown format specified", 0x0a
+   683 00000009 726F722E20556E6B6E-
+   683 00000012 6F776E20666F726D61-
+   683 0000001B 742073706563696669-
+   683 00000024 65640A             
+   684                                  UnknownSpecErrorMsgLen  equ $ - UnknownSpecErrorMsg
+   685                                  
+   686 00000027 0000000080842E41        double_1e6:  dq 0x412e848000000000
+   687                                  double_1     equ 0x3ff0000000000000
+   688                                  
+   689                                  ; options in ASCII order: %, <large gap>, b,  c,  d,  f,  n,  o,  s,  x
+   690                                  ;                         37              98  99 100 102 110 111 115 120
+   691                                  printf_jmp_table:
+   692 0000002F [E300000000000000]                  dq _Z8myprintfPKcz.spec_bin
+   693 00000037 [DC00000000000000]                  dq _Z8myprintfPKcz.spec_char
+   694 0000003F [F100000000000000]                  dq _Z8myprintfPKcz.spec_dec
+   695 00000047 [1401000000000000]                  times ('f' - 'd' - 1) dq _Z8myprintfPKcz.spec_error
+   696 0000004F [0601000000000000]                  dq _Z8myprintfPKcz.spec_float
+   697 00000057 [1401000000000000]-                 times ('n' - 'f' - 1) dq _Z8myprintfPKcz.spec_error
+   697 00000057 <rep 7h>           
+   698 0000008F [0D01000000000000]                  dq _Z8myprintfPKcz.spec_n
+   699 00000097 [EA00000000000000]                  dq _Z8myprintfPKcz.spec_oct
+   700 0000009F [1401000000000000]-                 times ('s' - 'o' - 1) dq _Z8myprintfPKcz.spec_error
+   700 0000009F <rep 3h>           
+   701 000000B7 [FF00000000000000]                  dq _Z8myprintfPKcz.spec_str
+   702 000000BF [1401000000000000]-                 times ('x' - 's' - 1) dq _Z8myprintfPKcz.spec_error
+   702 000000BF <rep 4h>           
+   703 000000DF [F800000000000000]                  dq _Z8myprintfPKcz.spec_hex
+   704                                  

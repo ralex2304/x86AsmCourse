@@ -10,7 +10,7 @@ segment .text
 ;=================================================
 
 %macro SYS_WRITE 2
-            mov rax, 0x01   ; sys_wryte
+            mov rax, 0x01   ; sys_write
             mov rdi, 0x01   ; stdout
             mov rsi, %1     ; buffer
             mov rdx, %2     ; buffer size
@@ -129,18 +129,18 @@ segment .text
             neg r15
 
             cmp r14, rax
-            jae %%NotXmmArgsExist
+            jae %%Exit
 
             cmp r10, rbp
             jae %%NotRegsArgsExist
 
             lea r14, [rbp + 16 + 8 * SavedArgs] ; ret + ret2 + SavedArgs
 
-            jmp %%NotXmmArgsExist
+            jmp %%Exit
 %%NotRegsArgsExist:
             mov r14, r10
 
-%%NotXmmArgsExist:
+%%Exit:
 %endmacro
 ;=================================================
 
@@ -208,7 +208,7 @@ SavedArgs   equ 5 ; !!! needed for stack args addr calc
             push rcx
             push rdx
             push rsi
-            mov r9, rdi
+            mov r9, rdi                 ; r9                - format string ptr
 
             mov r10, rsp                ; r10 = rsp         - args stack ptr
 
@@ -217,7 +217,7 @@ SavedArgs   equ 5 ; !!! needed for stack args addr calc
             mov r13d, dword [BufferSize]; r13 = [BufSize]   - buffer size
             mov bl, [r9]                ; bl  = [r9]        - current fmt symbol
             xor r8, r8                  ; r8d = 0           - symbol counter
-                                        ; r9                - format string ptr
+
             jmp .whileFmtEnter
 .whileFmtBody:
 
@@ -635,10 +635,12 @@ printf_spec_float:
             jb .regsLeft
 
             add r10, 8
+            jmp .regsLeft
 
 .xmmArgs:   sub r14, 8
 
 .regsLeft:
+            xor rbx, rbx ; bl is used as rbx in main function
             ret
 ;-------------------------------------------------
 
